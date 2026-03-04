@@ -51,16 +51,16 @@ export default function Navigation({ title }: { title?: string }) {
           
           {/* 桌面导航 */}
           <div className="hidden md:flex md:items-center md:space-x-8">
-            <NavLink href="/" active={isHome}>
+            <NavLink href="/" active={isHome} badge="01">
               HOME
             </NavLink>
-            <NavLink href="/games" active={isGames}>
+            <NavLink href="/games" active={isGames} badge="02">
               GAMES
             </NavLink>
-            <NavLink href="/simulations" active={isSimulations}>
+            <NavLink href="/simulations" active={isSimulations} badge="03">
               SIMULATIONS
             </NavLink>
-            <NavLink href="/tools" active={isTools}>
+            <NavLink href="/tools" active={isTools} badge="04">
               TOOLS
             </NavLink>
           </div>
@@ -113,10 +113,11 @@ interface NavLinkProps {
   href: string;
   active: boolean;
   children: ReactNode;
+  badge?: string;
 }
 
 // 桌面端导航链接
-function NavLink({ href, active, children }: NavLinkProps) {
+function NavLink({ href, active, children, badge }: NavLinkProps) {
   return (
     <Link 
       href={href} 
@@ -131,8 +132,8 @@ function NavLink({ href, active, children }: NavLinkProps) {
       <span className={`absolute bottom-0 left-0 h-[2px] bg-blue-600 transition-all duration-300 ${
         active ? 'w-full' : 'w-0 group-hover:w-full'
       }`}></span>
-      {active && (
-        <span className="absolute -top-1 -right-2 text-[10px] text-blue-600 font-mono">01</span>
+      {active && badge && (
+        <span className="absolute -top-1 -right-2 text-[10px] text-blue-600 font-mono">{badge}</span>
       )}
     </Link>
   );

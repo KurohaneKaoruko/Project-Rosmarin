@@ -12,7 +12,7 @@ export default function ToolsPage() {
         <div className="max-w-5xl mx-auto">
           <div className="mb-12 border-l-2 border-blue-500/50 pl-6">
             <h1 className="text-4xl font-bold text-zinc-900 mb-2 flex items-center gap-3">
-              <span className="text-blue-600 font-mono text-lg">02.</span>
+              <span className="text-blue-600 font-mono text-lg">03.</span>
               ALL_TOOLS
             </h1>
             <p className="text-zinc-500 font-mono text-sm">
