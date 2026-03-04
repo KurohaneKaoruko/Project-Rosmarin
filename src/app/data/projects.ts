@@ -32,6 +32,14 @@ export const games: Project[] = [
     technologies: ['React', 'TypeScript', 'Next.js', 'Tailwind CSS'],
     link: '/games/Snake'
   },
+  {
+    id: 'InvestmentSim',
+    title: '模拟投资',
+    description: '基于时间秒序号的行情模拟投资小游戏，价格每秒更新，历史按 5 分钟间隔展示，支持买卖操作与本地存档，确保所有玩家看到相同价格序列。',
+    image: '/images/investment-sim.svg',
+    technologies: ['React', 'TypeScript', 'Next.js', 'Tailwind CSS'],
+    link: '/games/InvestmentSim'
+  },
 ];
 
 export const simulations: Project[] = [
