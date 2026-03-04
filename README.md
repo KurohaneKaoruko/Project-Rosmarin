@@ -1,70 +1,139 @@
-# Project-Space
+# Project Space
 
-## 项目介绍
+> 一个以 `Next.js + React + TypeScript` 构建的互动实验仓库，集合了小游戏、可视化模拟与实用工具。
 
-Project-Space 是一个展示各种小游戏项目的空间。
+![Next.js](https://img.shields.io/badge/Next.js-15.2.8-000000?logo=next.js)
+![React](https://img.shields.io/badge/React-19-149ECA?logo=react)
+![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript)
+![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4-38BDF8?logo=tailwindcss)
+![Vitest](https://img.shields.io/badge/Test-Vitest-729B1B?logo=vitest)
+![License](https://img.shields.io/badge/License-MIT-blue.svg)
+
+## 目录
+
+- [项目简介](#项目简介)
+- [模块地图](#模块地图)
+- [功能亮点](#功能亮点)
+- [快速开始](#快速开始)
+- [可用脚本](#可用脚本)
+- [项目结构](#项目结构)
+- [技术栈](#技术栈)
+- [许可证](#许可证)
+
+## 项目简介
+
+Project Space 是一个“可玩 + 可看 + 可用”的前端项目集合：
+
+- `Games`：交互性较强的游戏模块（如 2048、贪吃蛇、模拟投资等）。
+- `Simulations`：偏规则与物理可视化的实验模块（如生命游戏、混沌摆、粒子生命）。
+- `Tools`：实用型处理工具（如图片短字符串编码器）。
+
+目标是将不同类型的想法快速落地为独立页面，同时保持统一的 UI 风格与工程规范。
+
+## 模块地图
+
+| 分区 | 路由 | 当前内容 |
+| --- | --- | --- |
+| 首页 | `/` | 总览入口，聚合所有模块 |
+| Games | `/games` | 2048、函数挂机、贪吃蛇、模拟投资 |
+| Simulations | `/simulations` | 生命游戏、兰顿蚂蚁、粒子生命、混沌摆 |
+| Tools | `/tools` | 图片短字符串编码 |
+
+### Games
+
+- `/games/Game2048`：多棋盘尺寸、撤销、自动 AI。
+- `/games/FunctionIdle`：函数增长主题挂机玩法，支持离线收益。
+- `/games/Snake`：经典贪吃蛇，带 AI 接管能力。
+- `/games/InvestmentSim`：可视化行情驱动的投资模拟。
+
+### Simulations
+
+- `/simulations/GameOfLife`：康威生命游戏（元胞自动机）。
+- `/simulations/LangtonsAnt`：兰顿蚂蚁规则演化。
+- `/simulations/ParticleLife`：WebGPU 加速的粒子生命系统。
+- `/simulations/PendulumSim`：双摆/三摆混沌运动模拟。
+
+### Tools
+
+- `/tools/ImageStringCodec`：图片编码为短字符串，支持解码还原下载。
+
+## 功能亮点
+
+- 统一的模块化页面组织，便于新增项目和快速扩展。
+- 游戏与模拟并行，覆盖规则系统、物理系统与 UI 交互场景。
+- 包含 WebGPU（Particle Life）等较高性能图形实验方向。
+- 使用 TypeScript 全链路约束，降低迭代时的回归风险。
+
+## 快速开始
+
+### 1) 环境要求
+
+- Node.js `>= 18.18`（建议使用 LTS）
+- npm `>= 9`
+
+### 2) 安装依赖
+
+```bash
+npm install
+```
+
+### 3) 启动开发环境
+
+```bash
+npm run dev
+```
+
+启动后访问：`http://localhost:3000`
+
+### 4) 构建与运行生产版本
+
+```bash
+npm run build
+npm run start
+```
+
+## 可用脚本
+
+| 命令 | 说明 |
+| --- | --- |
+| `npm run dev` | 启动本地开发服务（Turbopack） |
+| `npm run build` | 构建生产版本 |
+| `npm run start` | 启动生产服务 |
+| `npm run lint` | 执行 ESLint 检查 |
+| `npm run test` | 运行 Vitest 测试 |
+| `npm run test:watch` | Vitest 监听模式 |
+| `npm run train:2048` | 2048 训练（默认配置） |
+| `npm run train:2048:fast` | 2048 快速训练 |
+| `npm run train:2048:full` | 2048 完整训练 |
+| `npm run train:2048:gpu` | 2048 GPU 训练 |
+| `npm run train:2048:gpu:fast` | 2048 GPU 快速训练 |
+| `npm run train:2048:gpu:full` | 2048 GPU 完整训练 |
+
+## 项目结构
+
+```text
+project-space/
+├─ src/
+│  ├─ app/
+│  │  ├─ components/      # 通用 UI 组件（如导航）
+│  │  ├─ data/            # 项目元数据（games/simulations/tools）
+│  │  ├─ games/           # 游戏模块
+│  │  ├─ simulations/     # 模拟模块
+│  │  └─ tools/           # 工具模块
+│  ├─ utils/              # 通用工具函数
+│  └─ types/              # 类型声明
+├─ tools/                 # 训练或辅助脚本
+└─ docs/                  # 项目文档
+```
 
 ## 技术栈
 
-- Next.js 15
-- React 19
-- TypeScript
-- Tailwind CSS + DaisyUI
-- MongoDB
-
-## 项目列表
-
-### 2048 游戏
-
-经典的 2048 数字合并游戏，支持以下功能：
-
-- 多种棋盘大小 (4x4 ~ 7x7)
-- 撤销功能
-- 本地存档
-- 键盘和触屏操作
-- AI 自动游玩（三种模式）
-
-#### AI 玩家模式
-
-| 模式 | 算法 | 特点 |
-|------|------|------|
-| 快速 | 固定优先级 | 响应迅速，简单策略 |
-| 均衡 | Minimax | 平衡速度与效果 |
-| 最优 | Expectimax | 深度搜索，效果最佳 |
-
-### 函数挂机游戏 (Function Idle)
-
-一个探索数学函数增长之美的挂机游戏。
-
-- **核心玩法**：通过升级变量与参数，体验从线性到指数级的数值膨胀。
-- **离线收益**：支持本地存档与离线时间计算，重新打开即可获得累积收益。
-- **可视化**：实时图表展示增长曲线，直观感受数值变化。
-- **技术点**：大数处理 (BigNumber)、自定义 Hook 游戏循环、Canvas/SVG 图表绘制。
-
-### 混沌摆模拟 (PendulumSim)
-
-基于真实物理引擎的双摆/三摆混沌系统模拟。
-
-- **物理引擎**：基于拉格朗日方程 (Lagrangian Mechanics) 建立动力学模型，求解质量矩阵与角加速度。
-- **交互系统**：支持鼠标/触控拖拽摆锤，利用反向运动学 (IK) 实时调整姿态。
-- **可视化**：
-  - 实时轨迹绘制（Trail）
-  - 能量守恒监测（动能/势能曲线）
-- **移动端优化**：原生 Touch 事件支持，完美适配移动端交互。
-
-## 本地开发
-
-```bash
-# 安装依赖
-npm install
-
-# 启动开发服务器
-npm run dev
-
-# 构建生产版本
-npm run build
-```
+- 框架：Next.js 15、React 19
+- 语言：TypeScript
+- 样式：Tailwind CSS 4、Sass、DaisyUI
+- 测试：Vitest
+- 图形：Canvas、WebGPU（部分模块）
 
 ## 许可证
 
-MIT
+本项目采用 [MIT License](LICENSE)。
