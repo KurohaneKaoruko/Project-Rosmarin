@@ -90,7 +90,7 @@ function PriceChart(props: { candles: Candle[]; minute: number; livePrice: numbe
 }
 
 export default function Page() {
-  const { state, currentSecond, currentPrice, portfolioValue, profit, syncNow, buy, sell, reset } = useInvestmentSim();
+  const { state, currentSecond, syncedNowMs, clockSource, currentPrice, portfolioValue, profit, syncNow, buy, sell, reset } = useInvestmentSim();
   const [quantity, setQuantity] = useState(1);
   const [hint, setHint] = useState<string | null>(null);
 
@@ -136,7 +136,8 @@ export default function Page() {
               </div>
               <div className="text-right text-xs text-zinc-500 font-mono">
                 <div>本地存档: ON</div>
-                <div className="text-zinc-400">STORAGE: LOCAL</div>
+                <div className="text-zinc-400">CLOCK: {clockSource === 'server' ? 'SERVER_SYNCED' : 'LOCAL_FALLBACK'}</div>
+                <div className="text-zinc-400">{new Date(syncedNowMs).toISOString().replace('T', ' ').slice(0, 19)}Z</div>
               </div>
             </div>
           </div>

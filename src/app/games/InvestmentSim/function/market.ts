@@ -91,6 +91,17 @@ export function livePriceAtSecond(second: number): number {
   return roundPrice(Math.max(1, clamped));
 }
 
+export function livePriceAtMs(nowMs: number): number {
+  if (!Number.isFinite(nowMs)) return 0;
+  const elapsed = Math.max(0, (nowMs - EPOCH_MS) / 1000);
+  const second = Math.floor(elapsed);
+  const t = elapsed - second;
+  const eased = t * t * (3 - 2 * t);
+  const p0 = livePriceAtSecond(second);
+  const p1 = livePriceAtSecond(second + 1);
+  return roundPrice(p0 + (p1 - p0) * eased);
+}
+
 export function buildHistorySeries(
   currentSecond: number,
   points = HISTORY_POINTS,
