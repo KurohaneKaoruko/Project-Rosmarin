@@ -102,12 +102,6 @@ npm run start
 | `npm run lint` | 执行 ESLint 检查 |
 | `npm run test` | 运行 Vitest 测试 |
 | `npm run test:watch` | Vitest 监听模式 |
-| `npm run train:2048` | 2048 训练（默认配置） |
-| `npm run train:2048:fast` | 2048 快速训练 |
-| `npm run train:2048:full` | 2048 完整训练 |
-| `npm run train:2048:gpu` | 2048 GPU 训练 |
-| `npm run train:2048:gpu:fast` | 2048 GPU 快速训练 |
-| `npm run train:2048:gpu:full` | 2048 GPU 完整训练 |
 
 ## 项目结构
 

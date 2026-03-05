@@ -5,38 +5,24 @@ import { useAIController, type MoveSpeed, MOVE_SPEEDS } from '../function/useAIC
 import type { AIMode } from '../function/aiEngine';
 import type { Direction } from '../types';
 
-/**
- * AI设置面板组件属性
- */
 interface AISettingsPanelProps {
-  /** 当前棋盘状态 */
   board: number[][];
-  /** 游戏是否结束 */
   gameOver: boolean;
-  /** 执行移动的回调函数（带动画） */
   onMove: (direction: Direction) => void;
-  /** 直接执行移动的回调函数（跳过动画，供极速模式使用） */
   onMoveImmediate?: (direction: Direction) => void;
 }
 
-/**
- * AI模式配置
- */
 interface AIModeConfig {
   id: AIMode;
   name: string;
   description: string;
 }
 
-/**
- * 速度配置
- */
 interface SpeedConfig {
   id: MoveSpeed;
   name: string;
 }
 
-/** AI模式列表 */
 const AI_MODES: AIModeConfig[] = [
   {
     id: 'fast',
@@ -46,21 +32,15 @@ const AI_MODES: AIModeConfig[] = [
   {
     id: 'balanced',
     name: '博弈树 (MINIMAX)',
-    description: '/// 深度搜索 / 平衡效能',
+    description: '/// 深度搜索 / 平衡性能',
   },
   {
     id: 'optimal',
     name: '期望搜索 (EXPECTIMAX)',
     description: '/// 概率最大化 / 最优解',
   },
-  {
-    id: 'ntuple',
-    name: '神经网络 (N-TUPLE)',
-    description: '/// 机器学习评估 / 极高胜率',
-  },
 ];
 
-/** 速度选项列表 */
 const SPEED_OPTIONS: SpeedConfig[] = [
   { id: 'turbo', name: '极速 (TURBO)' },
   { id: 'fast', name: '快 (FAST)' },
@@ -68,39 +48,29 @@ const SPEED_OPTIONS: SpeedConfig[] = [
   { id: 'slow', name: '慢 (SLOW)' },
 ];
 
-/**
- * AI设置面板组件
- * 
- * 替代原有排行榜的UI组件，提供AI控制界面。
- * 包含AI模式选择、开始/停止按钮、速度调节功能。
- * 
- * Requirements: 2.1, 2.2, 2.3, 2.4, 2.5, 2.6, 2.7
- */
 export default function AISettingsPanel({ board, gameOver, onMove, onMoveImmediate }: AISettingsPanelProps) {
   const [isClient, setIsClient] = useState(false);
-  
+
   const {
     isRunning,
     currentMode,
     currentSpeed,
-    isLoadingWeights,
-    weightLoadError,
     startAI,
     stopAI,
     setMode,
     setSpeed,
   } = useAIController({ board, gameOver, onMove, onMoveImmediate });
 
-  // 客户端加载检测
   useEffect(() => {
     setIsClient(true);
   }, []);
 
-  if (!isClient) return null;
+  if (!isClient) {
+    return null;
+  }
 
   return (
     <div className="p-4 space-y-4">
-      {/* 标题 */}
       <div>
         <h3 className="text-lg font-bold text-zinc-900 flex items-center gap-2">
           <span className="w-1 h-4 bg-blue-600"></span>
@@ -111,35 +81,30 @@ export default function AISettingsPanel({ board, gameOver, onMove, onMoveImmedia
         </p>
       </div>
 
-      {/* AI模式选择 - Requirements: 2.1, 2.2, 2.6 */}
       <div className="space-y-2">
         <div className="text-xs font-bold text-zinc-900 uppercase tracking-wider">算法模型 (ALGORITHM)</div>
         <div className="space-y-2">
           {AI_MODES.map((mode) => {
             const isSelected = currentMode === mode.id;
-            const isNTupleLoading = mode.id === 'ntuple' && isLoadingWeights;
             return (
               <button
                 key={mode.id}
                 type="button"
                 onClick={() => setMode(mode.id)}
-                disabled={isNTupleLoading}
                 className={`
                   w-full p-2 text-left transition-all duration-200 border relative group
                   ${isSelected
                     ? 'bg-white border-blue-600 shadow-[0_0_10px_rgba(37,99,235,0.1)]'
                     : 'bg-zinc-50 border-zinc-200 hover:border-blue-400 hover:bg-white'
                   }
-                  ${isNTupleLoading ? 'opacity-50 cursor-wait' : ''}
                 `}
               >
                 {isSelected && <div className="absolute left-0 top-0 bottom-0 w-1 bg-blue-600"></div>}
                 <div className="flex items-center justify-between pl-2">
                   <span className={`text-xs font-bold font-mono uppercase ${isSelected ? 'text-blue-700' : 'text-zinc-700'}`}>
                     {mode.name}
-                    {isNTupleLoading && ' [LOADING...]'}
                   </span>
-                  {isSelected && !isNTupleLoading && (
+                  {isSelected && (
                     <div className="w-2 h-2 bg-blue-600 rounded-full animate-pulse shadow-sm"></div>
                   )}
                 </div>
@@ -150,18 +115,8 @@ export default function AISettingsPanel({ board, gameOver, onMove, onMoveImmedia
             );
           })}
         </div>
-        
-        {/* 权重加载错误提示 */}
-        {weightLoadError && (
-          <div className="mt-2 p-2 bg-red-50 border border-red-200">
-            <p className="text-[10px] font-mono text-red-600 uppercase">
-              [ERROR]: {weightLoadError}
-            </p>
-          </div>
-        )}
       </div>
 
-      {/* 速度调节 - Requirements: 2.7 */}
       <div className="space-y-2 pt-3 border-t border-zinc-200">
         <label className="text-xs font-bold text-zinc-900 uppercase tracking-wider block">
           处理速度 (SPEED)
@@ -192,7 +147,6 @@ export default function AISettingsPanel({ board, gameOver, onMove, onMoveImmedia
         </p>
       </div>
 
-      {/* 开始/停止按钮 - Requirements: 2.3, 2.4, 2.5 */}
       <button
         type="button"
         onClick={isRunning ? stopAI : startAI}
@@ -223,7 +177,6 @@ export default function AISettingsPanel({ board, gameOver, onMove, onMoveImmedia
         )}
       </button>
 
-      {/* 运行状态指示 */}
       {isRunning && (
         <div className="flex items-center justify-center text-[10px] font-mono text-blue-600 uppercase tracking-widest">
           <span className="w-1.5 h-1.5 bg-blue-600 rounded-full animate-ping mr-2"></span>
@@ -231,7 +184,6 @@ export default function AISettingsPanel({ board, gameOver, onMove, onMoveImmedia
         </div>
       )}
 
-      {/* 游戏结束提示 */}
       {gameOver && !isRunning && (
         <p className="text-center text-[10px] font-mono text-zinc-400 uppercase tracking-wider">
           {'/// SYSTEM_HALTED: GAME_OVER'}

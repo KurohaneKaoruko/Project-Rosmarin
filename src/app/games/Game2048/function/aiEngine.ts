@@ -11,11 +11,9 @@
  */
 
 import type { Direction } from '../types';
-import { NTupleNetwork } from './nTupleEngine';
-import { createDefaultNTupleNetwork, createNTupleNetworkAsync } from './nTupleWeights';
 
 /** AI模式类型 */
-export type AIMode = 'fast' | 'balanced' | 'optimal' | 'ntuple';
+export type AIMode = 'fast' | 'balanced' | 'optimal';
 
 /** 方向列表 */
 const DIRECTIONS: Direction[] = ['up', 'down', 'left', 'right'];
@@ -734,210 +732,6 @@ export function optimalModeMove(board: number[][]): Direction | null {
 }
 
 
-// ============================================
-// N-Tuple Network模式算法 (Expectimax with N-Tuple Evaluation)
-// ============================================
-
-/** N-Tuple Network转置表缓存 */
-const nTupleTranspositionTable = new Map<string, number>();
-
-/** N-Tuple Network实例（延迟初始化） */
-let nTupleNetworkInstance: NTupleNetwork | null = null;
-
-/** 是否正在加载权重 */
-let isLoadingWeights = false;
-
-/** 权重加载Promise */
-let weightsLoadingPromise: Promise<NTupleNetwork> | null = null;
-
-/**
- * 获取N-Tuple Network实例（单例模式）
- * 同步获取，如果未加载则使用默认启发式权重
- */
-function getNTupleNetwork(): NTupleNetwork {
-  if (!nTupleNetworkInstance) {
-    // 如果没有预加载的实例，使用同步创建的默认权重
-    nTupleNetworkInstance = createDefaultNTupleNetwork();
-  }
-  return nTupleNetworkInstance;
-}
-
-/**
- * 异步初始化N-Tuple Network
- * 在后台加载训练权重，加载完成后自动替换实例
- */
-export async function initNTupleNetworkAsync(): Promise<NTupleNetwork> {
-  if (nTupleNetworkInstance) {
-    return nTupleNetworkInstance;
-  }
-  
-  if (weightsLoadingPromise) {
-    return weightsLoadingPromise;
-  }
-  
-  isLoadingWeights = true;
-  weightsLoadingPromise = createNTupleNetworkAsync().then(network => {
-    nTupleNetworkInstance = network;
-    isLoadingWeights = false;
-    weightsLoadingPromise = null;
-    return network;
-  }).catch(error => {
-    console.warn('Failed to load trained weights, using defaults:', error);
-    nTupleNetworkInstance = createDefaultNTupleNetwork();
-    isLoadingWeights = false;
-    weightsLoadingPromise = null;
-    return nTupleNetworkInstance;
-  });
-  
-  return weightsLoadingPromise;
-}
-
-/**
- * 检查权重是否正在加载
- */
-export function isNTupleWeightsLoading(): boolean {
-  return isLoadingWeights;
-}
-
-/**
- * 重置N-Tuple Network实例
- * 主要用于测试或重新加载权重
- */
-export function resetNTupleNetwork(): void {
-  nTupleNetworkInstance = null;
-}
-
-/**
- * 设置自定义N-Tuple Network实例
- * 用于加载自定义权重
- */
-export function setNTupleNetwork(network: NTupleNetwork): void {
-  nTupleNetworkInstance = network;
-}
-
-/**
- * N-Tuple Expectimax搜索算法
- * 使用N-Tuple Network作为评估函数
- * 
- * @param board 当前棋盘
- * @param depth 搜索深度
- * @param isMaxPlayer 是否为最大化玩家
- * @param network N-Tuple Network实例
- * @returns 评估分数
- */
-function nTupleExpectimax(
-  board: number[][],
-  depth: number,
-  isMaxPlayer: boolean,
-  network: NTupleNetwork
-): number {
-  // 检查缓存
-  const cacheKey = `ntuple_${boardToKey(board)}_${depth}_${isMaxPlayer}`;
-  const cached = nTupleTranspositionTable.get(cacheKey);
-  if (cached !== undefined) {
-    return cached;
-  }
-  
-  // 叶子节点：使用N-Tuple Network评估
-  if (depth === 0) {
-    return network.evaluate(board);
-  }
-  
-  let result: number;
-  
-  if (isMaxPlayer) {
-    // 玩家回合：选择最大值
-    let maxScore = -Infinity;
-    
-    for (const direction of DIRECTIONS) {
-      const moveResult = simulateMove(board, direction);
-      if (moveResult.moved) {
-        const score = nTupleExpectimax(moveResult.board, depth - 1, false, network);
-        maxScore = Math.max(maxScore, score);
-      }
-    }
-    
-    result = maxScore === -Infinity ? network.evaluate(board) : maxScore;
-  } else {
-    // 随机回合：计算期望值
-    const emptyCells = getEmptyCells(board);
-    if (emptyCells.length === 0) {
-      result = nTupleExpectimax(board, depth - 1, true, network);
-    } else {
-      let expectedScore = 0;
-      
-      // 优化采样：根据空格数量和深度动态调整采样数
-      const maxSamples = Math.min(emptyCells.length, depth > 3 ? 4 : 6);
-      
-      // 随机采样
-      const sampledCells = emptyCells.length <= maxSamples 
-        ? emptyCells 
-        : shuffleAndTake(emptyCells, maxSamples);
-      
-      const probability = 1 / sampledCells.length;
-      
-      for (const cell of sampledCells) {
-        // 90%概率生成2
-        const board2 = cloneBoard(board);
-        board2[cell.row][cell.col] = 2;
-        expectedScore += 0.9 * probability * nTupleExpectimax(board2, depth - 1, true, network);
-        
-        // 10%概率生成4
-        const board4 = cloneBoard(board);
-        board4[cell.row][cell.col] = 4;
-        expectedScore += 0.1 * probability * nTupleExpectimax(board4, depth - 1, true, network);
-      }
-      
-      result = expectedScore;
-    }
-  }
-  
-  // 存入缓存
-  if (nTupleTranspositionTable.size > MAX_CACHE_SIZE) {
-    nTupleTranspositionTable.clear();
-  }
-  nTupleTranspositionTable.set(cacheKey, result);
-  
-  return result;
-}
-
-/**
- * N-Tuple Network模式移动
- * 使用Expectimax算法配合N-Tuple Network评估函数
- * 
- * Requirements: 5.1, 5.2, 5.5
- * 
- * @param board 当前棋盘状态
- * @returns 最佳移动方向，如果没有可用移动返回null
- */
-export function nTupleModeMove(board: number[][]): Direction | null {
-  // 清理缓存
-  nTupleTranspositionTable.clear();
-  
-  // 获取N-Tuple Network实例
-  const network = getNTupleNetwork();
-  
-  const emptyCells = countEmptyCells(board);
-  // 自适应深度：空格多时搜索较浅，空格少时搜索更深
-  // N-Tuple评估更快，可以使用稍深的搜索
-  const depth = emptyCells > 10 ? 3 : emptyCells > 6 ? 4 : emptyCells > 3 ? 5 : 6;
-  
-  let bestMove: Direction | null = null;
-  let bestScore = -Infinity;
-  
-  for (const direction of DIRECTIONS) {
-    const result = simulateMove(board, direction);
-    if (result.moved) {
-      const score = nTupleExpectimax(result.board, depth - 1, false, network);
-      if (score > bestScore) {
-        bestScore = score;
-        bestMove = direction;
-      }
-    }
-  }
-  
-  return bestMove;
-}
 
 
 // ============================================
@@ -959,8 +753,6 @@ export function getBestMove(board: number[][], mode: AIMode): Direction | null {
       return balancedModeMove(board);
     case 'optimal':
       return optimalModeMove(board);
-    case 'ntuple':
-      return nTupleModeMove(board);
     default:
       return fastModeMove(board);
   }
