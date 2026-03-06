@@ -1,6 +1,6 @@
-# Project Space
+# Project-Rosmarin
 
-> 一个以 `Next.js + React + TypeScript` 构建的互动实验仓库，集合了小游戏、可视化模拟与实用工具。
+> 一个以 `Next.js + React + TypeScript` 构建的互动实验与项目合集仓库，覆盖游戏、可视化模拟、实用工具等多种类型。
 
 ![Next.js](https://img.shields.io/badge/Next.js-15.2.8-000000?logo=next.js)
 ![React](https://img.shields.io/badge/React-19-149ECA?logo=react)
@@ -22,7 +22,7 @@
 
 ## 项目简介
 
-Project Space 是一个“可玩 + 可看 + 可用”的前端项目集合：
+Project-Rosmarin 是一个“可玩 + 可看 + 可用”的前端项目集合：
 
 - `Games`：交互性较强的游戏模块（如 2048、贪吃蛇、模拟投资等）。
 - `Simulations`：偏规则与物理可视化的实验模块（如生命游戏、混沌摆、粒子生命）。
@@ -106,7 +106,7 @@ npm run start
 ## 项目结构
 
 ```text
-project-space/
+project-rosmarin/
 ├─ src/
 │  ├─ app/
 │  │  ├─ components/      # 通用 UI 组件（如导航）
