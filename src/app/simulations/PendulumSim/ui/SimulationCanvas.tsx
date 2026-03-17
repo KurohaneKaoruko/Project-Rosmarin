@@ -45,7 +45,7 @@ export default function SimulationCanvas({
   const baseEnergyRef = useRef<number | null>(null);
   const energyBufRef = useRef<{ total: number; kinetic: number; potential: number }[]>([]);
   const trailRef = useRef<Vec2[]>([]);
-  const phaseRef = useRef<{ a: number; b: number }[]>([]);
+  const phaseRef = useRef<{ a: number; b: number; theta1: number }[]>([]);
 
   const totalLength = useMemo(() => {
     const count = params.mode === 'double' ? 2 : 3;
@@ -163,7 +163,8 @@ export default function SimulationCanvas({
         const idxB = count === 2 ? 1 : 2;
         const a = wrapAngle(snap.anglesRad[idxA] ?? 0);
         const b = wrapAngle(snap.anglesRad[idxB] ?? 0);
-        phaseRef.current.push({ a, b });
+        const angle1Raw = snap.anglesRad[0] ?? 0;
+        phaseRef.current.push({ a, b, theta1: angle1Raw });
         if (phaseRef.current.length > phaseN) phaseRef.current.splice(0, phaseRef.current.length - phaseN);
       } else {
         phaseRef.current = [];
@@ -325,25 +326,62 @@ export default function SimulationCanvas({
         const toY = (b: number) => y0 + (1 - (b + Math.PI) / (2 * Math.PI)) * boxH;
 
         const buf = phaseRef.current;
-        ctx.strokeStyle = 'rgba(37, 99, 235, 0.35)';
-        ctx.lineWidth = 1.25;
-        ctx.beginPath();
-        ctx.moveTo(toX(buf[0].a), toY(buf[0].b));
-        for (let i = 1; i < buf.length; i++) {
-          const prev = buf[i - 1];
-          const cur = buf[i];
-          const da = Math.abs(cur.a - prev.a);
-          const db = Math.abs(cur.b - prev.b);
-          if (da > Math.PI || db > Math.PI) {
-            ctx.moveTo(toX(cur.a), toY(cur.b));
-            continue;
+        const isTriple = paramsNow.mode === 'triple';
+
+        if (isTriple) {
+          const n = buf.length;
+          const step = Math.max(1, Math.floor(n / 2200));
+          const hueOf = (theta1: number) => {
+            const cycle = (theta1 / (2 * Math.PI)) % 1;
+            return ((cycle + 1) % 1) * 360;
+          };
+          ctx.lineWidth = 1.4;
+          ctx.lineCap = 'round';
+          for (let i = step; i < n; i += step) {
+            const prev = buf[i - step];
+            const cur = buf[i];
+            const da = Math.abs(cur.a - prev.a);
+            const db = Math.abs(cur.b - prev.b);
+            if (da > Math.PI || db > Math.PI) continue;
+            ctx.strokeStyle = `hsla(${hueOf(cur.theta1).toFixed(1)}, 78%, 46%, 0.9)`;
+            ctx.beginPath();
+            ctx.moveTo(toX(prev.a), toY(prev.b));
+            ctx.lineTo(toX(cur.a), toY(cur.b));
+            ctx.stroke();
           }
-          ctx.lineTo(toX(cur.a), toY(cur.b));
+
+          // sprinkle colored points for stronger hue perception
+          const dotStep = Math.max(1, Math.floor(n / 1400));
+          for (let i = 0; i < n; i += dotStep) {
+            const cur = buf[i];
+            ctx.fillStyle = `hsla(${hueOf(cur.theta1).toFixed(1)}, 85%, 45%, 1)`;
+            ctx.beginPath();
+            ctx.arc(toX(cur.a), toY(cur.b), 0.9, 0, Math.PI * 2);
+            ctx.fill();
+          }
+        } else {
+          ctx.strokeStyle = 'rgba(37, 99, 235, 0.35)';
+          ctx.lineWidth = 1.25;
+          ctx.beginPath();
+          ctx.moveTo(toX(buf[0].a), toY(buf[0].b));
+          for (let i = 1; i < buf.length; i++) {
+            const prev = buf[i - 1];
+            const cur = buf[i];
+            const da = Math.abs(cur.a - prev.a);
+            const db = Math.abs(cur.b - prev.b);
+            if (da > Math.PI || db > Math.PI) {
+              ctx.moveTo(toX(cur.a), toY(cur.b));
+              continue;
+            }
+            ctx.lineTo(toX(cur.a), toY(cur.b));
+          }
+          ctx.stroke();
         }
-        ctx.stroke();
 
         const last = buf[buf.length - 1];
-        ctx.fillStyle = '#2563EB';
+        ctx.fillStyle = isTriple
+          ? `hsl(${((((last.theta1 / (2 * Math.PI)) % 1) + 1) % 1 * 360).toFixed(1)}, 85%, 45%)`
+          : '#2563EB';
         ctx.beginPath();
         ctx.arc(toX(last.a), toY(last.b), 2.4, 0, Math.PI * 2);
         ctx.fill();
@@ -351,8 +389,31 @@ export default function SimulationCanvas({
         ctx.fillStyle = '#71717A';
         ctx.font = '10px ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace';
         const label =
-          paramsNow.mode === 'double' ? 'θ1,θ2' : 'θ2,θ3';
+          paramsNow.mode === 'double' ? 'θ1,θ2' : 'θ2,θ3 | hue=θ1';
         ctx.fillText(label, x0 + 10, y0 + 16);
+
+        if (isTriple) {
+          const legendW = 70;
+          const legendH = 6;
+          const lx = x0 + boxW - legendW - 10;
+          const ly = y0 + 10;
+          const grad = ctx.createLinearGradient(lx, 0, lx + legendW, 0);
+          grad.addColorStop(0, 'hsl(0, 85%, 45%)');
+          grad.addColorStop(1 / 6, 'hsl(60, 85%, 45%)');
+          grad.addColorStop(2 / 6, 'hsl(120, 85%, 45%)');
+          grad.addColorStop(3 / 6, 'hsl(180, 85%, 45%)');
+          grad.addColorStop(4 / 6, 'hsl(240, 85%, 45%)');
+          grad.addColorStop(5 / 6, 'hsl(300, 85%, 45%)');
+          grad.addColorStop(1, 'hsl(360, 85%, 45%)');
+          ctx.fillStyle = grad;
+          ctx.fillRect(lx, ly, legendW, legendH);
+          ctx.strokeStyle = '#E4E4E7';
+          ctx.lineWidth = 1;
+          ctx.strokeRect(lx, ly, legendW, legendH);
+          ctx.fillStyle = '#71717A';
+          ctx.font = '9px ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace';
+          ctx.fillText('θ1', lx + legendW + 6, ly + legendH - 1);
+        }
       }
 
       raf = requestAnimationFrame(loop);
