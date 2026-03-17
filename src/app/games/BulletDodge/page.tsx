@@ -7,7 +7,7 @@ import { computeAIStep } from './function/aiEngine';
 import { DEFAULT_AI_SCRIPT, highlightScript } from './function/customScript';
 import {
   BULLET_MARGIN,
-  DIRECTIONS,
+  DROP_BOMB_CHANCE,
   DROP_LIFE_CHANCE,
   DROP_UPGRADE_CHANCE,
   ENEMY_MARGIN,
@@ -16,6 +16,7 @@ import {
   PLAYER_BULLET_SPEED,
   PLAYER_FIRE_INTERVAL,
   PLAYER_INVULN_TIME,
+  PLAYER_MAX_BOMBS,
   PLAYER_MAX_LIVES,
   PLAYER_RADIUS,
   PLAYER_SPEED,
@@ -69,6 +70,7 @@ export default function BulletDodgePage() {
     best: 0,
     enemies: 0,
     lives: 3,
+    bombs: 0,
     powerSpeed: 1,
     spreadLevel: 0,
     aiEnabled: false,
@@ -117,6 +119,7 @@ export default function BulletDodgePage() {
       best: Math.round(bestScoreRef.current),
       enemies: s.enemies.length,
       lives: s.lives,
+      bombs: s.player.bombs,
       powerSpeed: round(s.player.bulletSpeedMult, 2),
       spreadLevel: s.player.spreadLevel,
       aiEnabled: s.aiEnabled,
@@ -146,6 +149,7 @@ export default function BulletDodgePage() {
       invulnTimer: 0,
       bulletSpeedMult: 1,
       spreadLevel: 0,
+      bombs: 0,
     };
   }, [seed]);
 
@@ -230,6 +234,7 @@ export default function BulletDodgePage() {
         invulnTimer: 0,
         bulletSpeedMult: 1,
         spreadLevel: 0,
+        bombs: 0,
       },
       spawnTimer: 0.8,
       aiEnabled: false,
@@ -340,6 +345,20 @@ export default function BulletDodgePage() {
           ctx.lineTo(pickup.x + pickup.r, pickup.y + pickup.r);
           ctx.lineTo(pickup.x - pickup.r, pickup.y + pickup.r);
           ctx.closePath();
+          ctx.fill();
+        } else if (pickup.kind === 'bomb') {
+          ctx.strokeStyle = '#a855f7';
+          ctx.lineWidth = 1.6;
+          ctx.beginPath();
+          ctx.moveTo(pickup.x, pickup.y - pickup.r);
+          ctx.lineTo(pickup.x + pickup.r, pickup.y);
+          ctx.lineTo(pickup.x, pickup.y + pickup.r);
+          ctx.lineTo(pickup.x - pickup.r, pickup.y);
+          ctx.closePath();
+          ctx.stroke();
+          ctx.fillStyle = '#a855f7';
+          ctx.beginPath();
+          ctx.arc(pickup.x, pickup.y, pickup.r * 0.35, 0, Math.PI * 2);
           ctx.fill();
         } else {
           ctx.fillStyle = '#f472b6';
@@ -493,15 +512,53 @@ export default function BulletDodgePage() {
       }
     };
 
+    const addBombCharge = (count = 1) => {
+      const s = stateRef.current;
+      if (!s) return;
+      s.player.bombs = Math.min(PLAYER_MAX_BOMBS, s.player.bombs + count);
+    };
+
+    const triggerBomb = () => {
+      const s = stateRef.current;
+      if (!s || s.mode !== 'running') return;
+      if (s.player.bombs <= 0) return;
+      s.player.bombs -= 1;
+      const level = s.player.spreadLevel;
+      const baseCount = 14 + level * 6;
+      const baseSpeed = PLAYER_BULLET_SPEED * (0.8 + 0.1 * level);
+      const rings = level >= 2 ? 2 : 1;
+      for (let ring = 0; ring < rings; ring += 1) {
+        const ringSpeed = baseSpeed * (ring === 0 ? 1 : 0.72);
+        const offset = ring === 0 ? 0 : Math.PI / baseCount;
+        for (let i = 0; i < baseCount; i += 1) {
+          const angle = (Math.PI * 2 * i) / baseCount + offset;
+          s.bullets.push({
+            id: bulletIdRef.current++,
+            x: s.player.x,
+            y: s.player.y,
+            vx: Math.cos(angle) * ringSpeed,
+            vy: Math.sin(angle) * ringSpeed,
+            r: 2.8,
+            owner: 'player',
+          });
+        }
+      }
+      spawnParticles(s.player.x, s.player.y, '#a855f7', 18 + level * 6, 200, 0.55);
+      syncHud();
+    };
+
     const spawnPickup = (x: number, y: number) => {
       const s = stateRef.current;
       if (!s) return;
       const rng = rngRef.current;
       const roll = rng();
       let kind: PickupKind | null = null;
+      const isMaxed = s.player.spreadLevel >= 3 && s.player.bulletSpeedMult >= 1.8;
       if (roll < DROP_LIFE_CHANCE) {
         kind = 'life';
-      } else if (roll < DROP_LIFE_CHANCE + DROP_UPGRADE_CHANCE) {
+      } else if (roll < DROP_LIFE_CHANCE + DROP_BOMB_CHANCE) {
+        kind = 'bomb';
+      } else if (!isMaxed && roll < DROP_LIFE_CHANCE + DROP_BOMB_CHANCE + DROP_UPGRADE_CHANCE) {
         kind = 'upgrade';
       }
       if (!kind) return;
@@ -726,10 +783,19 @@ export default function BulletDodgePage() {
           if (pickup.kind === 'life') {
             s.lives = Math.min(PLAYER_MAX_LIVES, s.lives + 1);
             spawnParticles(pickup.x, pickup.y, '#f472b6', 10, 100, 0.5);
+          } else if (pickup.kind === 'bomb') {
+            addBombCharge();
+            spawnParticles(pickup.x, pickup.y, '#a855f7', 12, 130, 0.55);
           } else {
-            s.player.bulletSpeedMult = Math.min(1.8, s.player.bulletSpeedMult + 0.12);
-            s.player.spreadLevel = Math.min(3, s.player.spreadLevel + 1);
-            spawnParticles(pickup.x, pickup.y, '#22c55e', 12, 120, 0.55);
+            const isMaxed = s.player.spreadLevel >= 3 && s.player.bulletSpeedMult >= 1.8;
+            if (isMaxed) {
+              addBombCharge();
+              spawnParticles(pickup.x, pickup.y, '#a855f7', 12, 130, 0.55);
+            } else {
+              s.player.bulletSpeedMult = Math.min(1.8, s.player.bulletSpeedMult + 0.12);
+              s.player.spreadLevel = Math.min(3, s.player.spreadLevel + 1);
+              spawnParticles(pickup.x, pickup.y, '#22c55e', 12, 120, 0.55);
+            }
           }
         } else {
           pickupsToKeep.push(pickup);
@@ -791,7 +857,7 @@ export default function BulletDodgePage() {
           startGame();
         }
       }
-      if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ' '].includes(event.key)) {
+      if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ' ', 'x', 'X'].includes(event.key)) {
         event.preventDefault();
       }
       if (event.key === 'Enter') {
@@ -802,6 +868,11 @@ export default function BulletDodgePage() {
       if (event.key === ' ') {
         event.preventDefault();
         togglePause();
+        return;
+      }
+      if (event.key === 'x' || event.key === 'X') {
+        event.preventDefault();
+        triggerBomb();
         return;
       }
       if (event.key === 'r' || event.key === 'R') {
@@ -867,6 +938,7 @@ export default function BulletDodgePage() {
           r: s.player.r,
           speed: s.player.speed,
           invuln: round(s.player.invulnTimer, 2),
+          bombs: s.player.bombs,
         },
         enemies: s.enemies.map((enemy) => ({
           id: enemy.id,
@@ -965,7 +1037,7 @@ export default function BulletDodgePage() {
                       </div>
                     </div>
                   </div>
-                  <div className="absolute top-3 right-3 z-10">
+                  <div className="absolute top-3 right-3 z-10 flex items-center gap-2">
                     <div className="flex items-center gap-2 border border-zinc-200 bg-white/90 px-2 py-1 text-[11px] font-mono text-zinc-700">
                       <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true">
                         <path
@@ -977,6 +1049,19 @@ export default function BulletDodgePage() {
                         />
                       </svg>
                       <span>{hud.lives}</span>
+                    </div>
+                    <div className="flex items-center gap-2 border border-zinc-200 bg-white/90 px-2 py-1 text-[11px] font-mono text-zinc-700">
+                      <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true">
+                        <path
+                          d="M8 1.5L14.5 8L8 14.5L1.5 8Z"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="1.6"
+                          strokeLinejoin="round"
+                        />
+                        <circle cx="8" cy="8" r="2" fill="currentColor" />
+                      </svg>
+                      <span>{hud.bombs}</span>
                     </div>
                   </div>
                   <canvas ref={canvasRef} />
@@ -1035,6 +1120,7 @@ export default function BulletDodgePage() {
                   <div className="text-[10px] uppercase tracking-widest text-zinc-400 font-mono">Controls</div>
                   <div>移动：WASD / 方向键</div>
                   <div>射击：自动 ｜ 慢速：Shift</div>
+                  <div>大招：X</div>
                   <div>暂停：Space ｜ 重新开始：R ｜ 全屏：F</div>
                 </div>
 

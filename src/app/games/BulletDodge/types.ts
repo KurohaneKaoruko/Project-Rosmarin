@@ -35,9 +35,10 @@ export type Player = {
   invulnTimer: number;
   bulletSpeedMult: number;
   spreadLevel: number;
+  bombs: number;
 };
 
-export type PickupKind = 'upgrade' | 'life';
+export type PickupKind = 'upgrade' | 'life' | 'bomb';
 
 export type Pickup = {
   id: number;

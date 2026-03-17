@@ -12,7 +12,9 @@ export const SCORE_PER_KILL_TRACKER = 180;
 export const SCORE_INTENSITY_BONUS = 0.18;
 export const DROP_UPGRADE_CHANCE = 0.25;
 export const DROP_LIFE_CHANCE = 0.12;
+export const DROP_BOMB_CHANCE = 0.1;
 export const PLAYER_MAX_LIVES = 5;
+export const PLAYER_MAX_BOMBS = 3;
 export const PLAYER_INVULN_TIME = 1.4;
 export const PICKUP_SPEED = 60;
 

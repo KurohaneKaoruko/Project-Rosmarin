@@ -1,4 +1,4 @@
-import { DIRECTIONS, PLAYER_MAX_LIVES, WORLD, clamp } from './gameUtils';
+import { DIRECTIONS, PLAYER_MAX_BOMBS, PLAYER_MAX_LIVES, WORLD, clamp } from './gameUtils';
 import type { Enemy, GameState, Pickup } from '../types';
 
 type AiMode = 'builtin' | 'custom';
@@ -36,7 +36,13 @@ export function computeAIStep({
       lives: s.lives,
       intensity: s.intensity,
       bounds: { width: WORLD.width, height: WORLD.height },
-      player: { x: s.player.x, y: s.player.y, r: s.player.r, speed: s.player.speed },
+      player: {
+        x: s.player.x,
+        y: s.player.y,
+        r: s.player.r,
+        speed: s.player.speed,
+        bombs: s.player.bombs,
+      },
       enemies: s.enemies.map((enemy) => ({
         x: enemy.x,
         y: enemy.y,
@@ -175,18 +181,25 @@ export function computeAIStep({
   }, null);
   const targetX = targetEnemy ? targetEnemy.x : null;
   const needUpgrade = s.player.spreadLevel < 3 || s.player.bulletSpeedMult < 1.8;
+  const bombUrgency =
+    s.player.bombs >= PLAYER_MAX_BOMBS ? 0 : s.player.bombs <= 0 ? 1.5 : s.player.bombs === 1 ? 1.1 : 0.75;
   let pickupTarget: Pickup | null = null;
   let pickupScore = -Infinity;
   const upgradeUrgency =
     0.9 + (3 - s.player.spreadLevel) * 0.1 + (1.8 - s.player.bulletSpeedMult) * 0.12;
   for (const pickup of s.pickups) {
+    let urgency = 0;
     if (pickup.kind === 'life') {
       if (s.lives >= PLAYER_MAX_LIVES) continue;
-    } else if (!needUpgrade) {
-      continue;
+      urgency = s.lives <= 2 ? 1.8 : 1.3;
+    } else if (pickup.kind === 'bomb') {
+      urgency = bombUrgency;
+    } else if (needUpgrade) {
+      urgency = upgradeUrgency;
+    } else {
+      urgency = bombUrgency * 0.9;
     }
     const dist = Math.hypot(pickup.x - s.player.x, pickup.y - s.player.y);
-    const urgency = pickup.kind === 'life' ? (s.lives <= 2 ? 1.8 : 1.3) : upgradeUrgency;
     const score = urgency / (dist + 30);
     if (score > pickupScore) {
       pickupScore = score;
@@ -260,7 +273,17 @@ export function computeAIStep({
     let pickupBias = 0;
     if (pickupTarget) {
       const dist = Math.hypot(finalX - pickupTarget.x, finalY - pickupTarget.y);
-      const weight = pickupTarget.kind === 'life' ? (s.lives <= 2 ? 1.8 : 1.3) : upgradeUrgency;
+      const upgradeAsBomb = pickupTarget.kind === 'upgrade' && !needUpgrade;
+      const weight =
+        pickupTarget.kind === 'life'
+          ? s.lives <= 2
+            ? 1.8
+            : 1.3
+          : pickupTarget.kind === 'bomb'
+            ? bombUrgency
+            : upgradeAsBomb
+              ? bombUrgency * 0.9
+              : upgradeUrgency;
       pickupBias = (90 / (dist + 30)) * weight;
       if (pickupDistNow !== null && pickupDir) {
         const closeFactor = clamp((150 - pickupDistNow) / 150, 0, 1);

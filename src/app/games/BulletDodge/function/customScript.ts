@@ -1,5 +1,5 @@
 const DEFAULT_AI_SCRIPT = `// Return {dx, dy} with values between -1 and 1.
-// state: { player, enemies, bullets, pickups, bounds, time, intensity, lives }
+// state: { player, enemies, bullets, pickups, bounds, time, intensity, lives } (player has bombs)
 // utils: { clamp, length, normalize, direction, nearestEnemy, nearestBullet, nearestPickup, avoidBullets }
 const target = utils.nearestEnemy(state.player, state.enemies);
 if (!target) return { dx: 0, dy: 0.2 };
