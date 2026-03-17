@@ -2,151 +2,40 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Navigation from '../../components/Navigation';
-
-type Mode = 'menu' | 'running' | 'paused' | 'gameover';
-
-type BulletOwner = 'player' | 'enemy';
-
-type Bullet = {
-  id: number;
-  x: number;
-  y: number;
-  vx: number;
-  vy: number;
-  r: number;
-  owner: BulletOwner;
-};
-
-type EnemyType = 'fixed' | 'tracker';
-
-type Enemy = {
-  id: number;
-  x: number;
-  y: number;
-  vx: number;
-  vy: number;
-  r: number;
-  hp: number;
-  type: EnemyType;
-  fireTimer: number;
-};
-
-type Player = {
-  x: number;
-  y: number;
-  r: number;
-  speed: number;
-  fireTimer: number;
-  invulnTimer: number;
-  bulletSpeedMult: number;
-  spreadLevel: number;
-};
-
-type PickupKind = 'upgrade' | 'life';
-
-type Pickup = {
-  id: number;
-  x: number;
-  y: number;
-  vx: number;
-  vy: number;
-  r: number;
-  kind: PickupKind;
-};
-
-type Particle = {
-  id: number;
-  x: number;
-  y: number;
-  vx: number;
-  vy: number;
-  r: number;
-  life: number;
-  maxLife: number;
-  color: string;
-};
-
-type GameState = {
-  mode: Mode;
-  time: number;
-  score: number;
-  lives: number;
-  enemies: Enemy[];
-  bullets: Bullet[];
-  pickups: Pickup[];
-  particles: Particle[];
-  player: Player;
-  spawnTimer: number;
-  aiEnabled: boolean;
-  intensity: number;
-};
-
-const WORLD = { width: 720, height: 420 };
-const PLAYER_RADIUS = 6;
-const PLAYER_SPEED = 280;
-const PLAYER_FIRE_INTERVAL = 0.16;
-const PLAYER_BULLET_SPEED = 420;
-const ENEMY_MARGIN = 50;
-const BULLET_MARGIN = 70;
-const HUD_UPDATE_INTERVAL = 0.2;
-const SCORE_PER_SECOND = 10;
-const SCORE_PER_KILL_FIXED = 120;
-const SCORE_PER_KILL_TRACKER = 180;
-const SCORE_INTENSITY_BONUS = 0.18;
-const DROP_UPGRADE_CHANCE = 0.25;
-const DROP_LIFE_CHANCE = 0.12;
-const PLAYER_MAX_LIVES = 5;
-const PLAYER_INVULN_TIME = 1.4;
-const PICKUP_SPEED = 60;
-
-const DIRECTIONS = [
-  { dx: 0, dy: 0 },
-  { dx: 1, dy: 0 },
-  { dx: -1, dy: 0 },
-  { dx: 0, dy: 1 },
-  { dx: 0, dy: -1 },
-  { dx: 1, dy: 1 },
-  { dx: 1, dy: -1 },
-  { dx: -1, dy: 1 },
-  { dx: -1, dy: -1 },
-];
-
-function clamp(value: number, min: number, max: number) {
-  return Math.max(min, Math.min(max, value));
-}
-
-function mulberry32(seed: number) {
-  let t = seed >>> 0;
-  return () => {
-    t += 0x6d2b79f5;
-    let r = Math.imul(t ^ (t >>> 15), t | 1);
-    r ^= r + Math.imul(r ^ (r >>> 7), r | 61);
-    return ((r ^ (r >>> 14)) >>> 0) / 4294967296;
-  };
-}
-
-function getSpawnInterval(time: number, intensity: number) {
-  const base = 0.95 - intensity * 0.08;
-  const ramp = base - time * 0.008;
-  return clamp(ramp, 0.28, 1.1);
-}
-
-function getEnemySpeed(time: number, intensity: number) {
-  return clamp(55 + intensity * 7 + time * 0.8, 55, 150);
-}
-
-function getEnemyBulletSpeed(time: number, intensity: number) {
-  return clamp(140 + intensity * 12 + time * 1.2, 140, 260);
-}
-
-function getEnemyFireInterval(intensity: number) {
-  return clamp(1.4 - intensity * 0.12, 0.45, 1.4);
-}
-
-function round(n: number, digits = 1) {
-  const p = 10 ** digits;
-  return Math.round(n * p) / p;
-}
+import AIScriptModal from './components/AIScriptModal';
+import { computeAIStep } from './function/aiEngine';
+import { DEFAULT_AI_SCRIPT, highlightScript } from './function/customScript';
+import {
+  BULLET_MARGIN,
+  DIRECTIONS,
+  DROP_LIFE_CHANCE,
+  DROP_UPGRADE_CHANCE,
+  ENEMY_MARGIN,
+  HUD_UPDATE_INTERVAL,
+  PICKUP_SPEED,
+  PLAYER_BULLET_SPEED,
+  PLAYER_FIRE_INTERVAL,
+  PLAYER_INVULN_TIME,
+  PLAYER_MAX_LIVES,
+  PLAYER_RADIUS,
+  PLAYER_SPEED,
+  SCORE_INTENSITY_BONUS,
+  SCORE_PER_KILL_FIXED,
+  SCORE_PER_KILL_TRACKER,
+  SCORE_PER_SECOND,
+  WORLD,
+} from './function/gameUtils';
+import type { Bullet, Enemy, EnemyType, GameState, Mode, Particle, Pickup, PickupKind } from './types';
+import {
+  clamp,
+  getEnemyBulletSpeed,
+  getEnemyFireInterval,
+  getEnemySpeed,
+  getIntensity,
+  getSpawnInterval,
+  mulberry32,
+  round,
+} from './function/gameUtils';
 
 declare global {
   interface Window {
@@ -183,11 +72,40 @@ export default function BulletDodgePage() {
     powerSpeed: 1,
     spreadLevel: 0,
     aiEnabled: false,
-    intensity: 3,
+    intensity: getIntensity(0),
   });
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [aiMode, setAiMode] = useState<'builtin' | 'custom'>('builtin');
+  const [showAIScript, setShowAIScript] = useState(false);
+  const [aiScript, setAiScript] = useState(DEFAULT_AI_SCRIPT);
+  const [aiScriptError, setAiScriptError] = useState<string | null>(null);
+  const aiScriptRef = useRef<((state: any, utils: any) => any) | null>(null);
+  const aiScriptErrorRef = useRef<string | null>(null);
+  const aiModeRef = useRef<'builtin' | 'custom'>('builtin');
+  const aiPreRef = useRef<HTMLPreElement | null>(null);
+
+  const highlightedAIScript = useMemo(() => highlightScript(aiScript), [aiScript]);
 
   const seed = useMemo(() => 43691, []);
+
+  const applyAIScript = useCallback((source: string) => {
+    try {
+      const fn = new Function('state', 'utils', `"use strict";\n${source}`);
+      aiScriptRef.current = (state: any, utils: any) => fn(state, utils);
+      aiScriptErrorRef.current = null;
+      setAiScriptError(null);
+      window.localStorage.setItem('bullet-dodge-ai-script', source);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      aiScriptErrorRef.current = message;
+      setAiScriptError(message);
+    }
+  }, []);
+
+  const resetAIScript = useCallback(() => {
+    setAiScript(DEFAULT_AI_SCRIPT);
+    applyAIScript(DEFAULT_AI_SCRIPT);
+  }, [applyAIScript]);
 
   const syncHud = useCallback(() => {
     const s = stateRef.current;
@@ -218,6 +136,7 @@ export default function BulletDodgePage() {
     s.pickups = [];
     s.particles = [];
     s.spawnTimer = 0.8;
+    s.intensity = getIntensity(0);
     s.player = {
       x: WORLD.width / 2,
       y: WORLD.height * 0.75,
@@ -264,16 +183,33 @@ export default function BulletDodgePage() {
     syncHud();
   }, [syncHud]);
 
-  const setIntensity = useCallback((value: number) => {
-    const s = stateRef.current;
-    if (!s) return;
-    s.intensity = value;
-    syncHud();
-  }, [syncHud]);
 
   useEffect(() => {
     bestScoreRef.current = Number(window.localStorage.getItem('bullet-dodge-best-score') || 0);
   }, []);
+
+  useEffect(() => {
+    const storedScript = window.localStorage.getItem('bullet-dodge-ai-script');
+    const storedMode = window.localStorage.getItem('bullet-dodge-ai-mode');
+    const script = storedScript || DEFAULT_AI_SCRIPT;
+    setAiScript(script);
+    applyAIScript(script);
+    if (storedMode === 'custom') setAiMode('custom');
+  }, [applyAIScript]);
+
+  useEffect(() => {
+    aiModeRef.current = aiMode;
+    window.localStorage.setItem('bullet-dodge-ai-mode', aiMode);
+  }, [aiMode]);
+
+  useEffect(() => {
+    if (!showAIScript) return;
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = previous;
+    };
+  }, [showAIScript]);
 
   useEffect(() => {
     stateRef.current = {
@@ -297,7 +233,7 @@ export default function BulletDodgePage() {
       },
       spawnTimer: 0.8,
       aiEnabled: false,
-      intensity: 3,
+      intensity: getIntensity(0),
     };
     syncHud();
   }, [syncHud]);
@@ -470,72 +406,17 @@ export default function BulletDodgePage() {
       return { dx: dx / magnitude, dy: dy / magnitude };
     };
 
-    const computeAIStep = () => {
+    const computeAIStepLocal = () => {
       const s = stateRef.current;
       if (!s) return { dx: 0, dy: 0 };
-      const horizon = 0.75;
-      const steps = 12;
-      const safeBullet = 16;
-      const safeEnemy = 22;
-      let best = { score: -Infinity, dx: 0, dy: 0 };
-      const preferredY = WORLD.height * 0.72;
-      const targetEnemy = s.enemies.reduce<Enemy | null>((chosen, enemy) => {
-        if (!chosen) return enemy;
-        return enemy.y > chosen.y ? enemy : chosen;
-      }, null);
-      const targetX = targetEnemy ? targetEnemy.x : null;
-
-      for (const dir of DIRECTIONS) {
-        const mag = Math.hypot(dir.dx, dir.dy) || 1;
-        const dx = dir.dx / mag;
-        const dy = dir.dy / mag;
-        let minClear = Infinity;
-        let risk = 0;
-        let finalX = s.player.x;
-        let finalY = s.player.y;
-        for (let i = 1; i <= steps; i += 1) {
-          const t = (i / steps) * horizon;
-          const px = clamp(s.player.x + dx * s.player.speed * t, s.player.r + 6, WORLD.width - s.player.r - 6);
-          const py = clamp(s.player.y + dy * s.player.speed * t, s.player.r + 6, WORLD.height - s.player.r - 6);
-          finalX = px;
-          finalY = py;
-          const timeWeight = 0.6 + (1 - t / horizon) * 0.6;
-
-          for (const bullet of s.bullets) {
-            if (bullet.owner !== 'enemy') continue;
-            const bx = bullet.x + bullet.vx * t;
-            const by = bullet.y + bullet.vy * t;
-            const clearance = Math.hypot(px - bx, py - by) - bullet.r - s.player.r;
-            if (clearance < minClear) minClear = clearance;
-            if (clearance < safeBullet) {
-              const danger = (safeBullet - clearance) ** 2;
-              risk += danger * timeWeight;
-            }
-          }
-
-          for (const enemy of s.enemies) {
-            const ex = enemy.x + enemy.vx * t;
-            const ey = enemy.y + enemy.vy * t;
-            const clearance = Math.hypot(px - ex, py - ey) - enemy.r - s.player.r;
-            if (clearance < minClear) minClear = clearance;
-            if (clearance < safeEnemy) {
-              const danger = (safeEnemy - clearance) ** 2;
-              risk += danger * 1.4 * timeWeight;
-            }
-          }
-        }
-        if (!Number.isFinite(minClear)) minClear = 120;
-        const edgeBuffer = Math.min(finalX - s.player.r, WORLD.width - s.player.r - finalX, finalY - s.player.r, WORLD.height - s.player.r - finalY);
-        const verticalBias = -Math.abs(finalY - preferredY) * 0.0025;
-        const targetBias = targetX !== null ? -Math.abs(finalX - targetX) * 0.025 : 0;
-        const momentum = (dx * aiDirRef.current.dx + dy * aiDirRef.current.dy) * 0.08;
-        const score = minClear * 1.2 - risk * 0.08 + edgeBuffer * 0.2 + verticalBias + targetBias + momentum;
-        if (score > best.score) {
-          best = { score, dx, dy };
-        }
-      }
-      aiDirRef.current = { dx: best.dx, dy: best.dy };
-      return { dx: best.dx, dy: best.dy };
+      return computeAIStep({
+        state: s,
+        aiMode: aiModeRef.current,
+        aiScript: aiScriptRef.current,
+        aiScriptErrorRef,
+        setAiScriptError,
+        aiDirRef,
+      });
     };
 
     const spawnEnemy = () => {
@@ -710,8 +591,9 @@ export default function BulletDodgePage() {
       const s = stateRef.current;
       if (!s || s.mode !== 'running') return;
 
-      const intensityMultiplier = 1 + s.intensity * SCORE_INTENSITY_BONUS;
       s.time += dt;
+      s.intensity = getIntensity(s.time);
+      const intensityMultiplier = 1 + s.intensity * SCORE_INTENSITY_BONUS;
       s.score += dt * SCORE_PER_SECOND * intensityMultiplier;
       s.spawnTimer -= dt;
       while (s.spawnTimer <= 0) {
@@ -721,7 +603,7 @@ export default function BulletDodgePage() {
 
       const slow = keysRef.current.has('Shift');
       const speed = s.player.speed * (slow ? 0.55 : 1);
-      const input = s.aiEnabled ? computeAIStep() : getInputVector();
+      const input = s.aiEnabled ? computeAIStepLocal() : getInputVector();
       s.player.x = clamp(s.player.x + input.dx * speed * dt, s.player.r + 4, WORLD.width - s.player.r - 4);
       s.player.y = clamp(s.player.y + input.dy * speed * dt, s.player.r + 4, WORLD.height - s.player.r - 4);
 
@@ -1147,21 +1029,6 @@ export default function BulletDodgePage() {
                   </button>
                 </div>
 
-                <div className="space-y-2">
-                  <div className="flex justify-between text-xs font-mono text-zinc-500">
-                    <span>敌人密度</span>
-                    <span>{hud.intensity}</span>
-                  </div>
-                  <input
-                    type="range"
-                    min={1}
-                    max={5}
-                    value={hud.intensity}
-                    onChange={(event) => setIntensity(Number(event.target.value))}
-                    className="w-full h-2 bg-zinc-100 appearance-none cursor-pointer accent-zinc-900"
-                  />
-                </div>
-
                 {/* Stats moved to canvas overlay */}
 
                 <div className="text-xs text-zinc-500 leading-relaxed space-y-2">
@@ -1170,11 +1037,62 @@ export default function BulletDodgePage() {
                   <div>射击：自动 ｜ 慢速：Shift</div>
                   <div>暂停：Space ｜ 重新开始：R ｜ 全屏：F</div>
                 </div>
+
+                <div className="border-t border-zinc-100 pt-4 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="text-[10px] uppercase tracking-widest text-zinc-400 font-mono">AI Script</div>
+                    <button
+                      onClick={() => setShowAIScript(true)}
+                      className="text-[10px] font-mono text-blue-600 hover:text-blue-800"
+                    >
+                      编辑
+                    </button>
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => setAiMode('builtin')}
+                      className={`flex-1 px-2 py-2 text-[11px] font-bold uppercase tracking-widest border transition ${
+                        aiMode === 'builtin'
+                          ? 'bg-zinc-900 text-white border-zinc-900'
+                          : 'bg-white text-zinc-500 border-zinc-200 hover:text-zinc-900'
+                      }`}
+                    >
+                      内置
+                    </button>
+                    <button
+                      onClick={() => setAiMode('custom')}
+                      className={`flex-1 px-2 py-2 text-[11px] font-bold uppercase tracking-widest border transition ${
+                        aiMode === 'custom'
+                          ? 'bg-blue-600 text-white border-blue-600'
+                          : 'bg-white text-zinc-500 border-zinc-200 hover:text-zinc-900'
+                      }`}
+                    >
+                      自定义
+                    </button>
+                  </div>
+                  {aiScriptError && (
+                    <div className="text-[11px] text-red-600">
+                      脚本错误：{aiScriptError}
+                    </div>
+                  )}
+                </div>
               </div>
             </section>
           </div>
         </div>
       </div>
+
+      <AIScriptModal
+        open={showAIScript}
+        script={aiScript}
+        highlighted={highlightedAIScript}
+        error={aiScriptError}
+        preRef={aiPreRef}
+        onClose={() => setShowAIScript(false)}
+        onChange={setAiScript}
+        onApply={() => applyAIScript(aiScript)}
+        onReset={resetAIScript}
+      />
     </main>
   );
 }
