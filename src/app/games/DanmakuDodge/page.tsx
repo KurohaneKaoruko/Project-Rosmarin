@@ -46,7 +46,7 @@ declare global {
   }
 }
 
-export default function BulletDodgePage() {
+export default function DanmakuDodgePage() {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const stateRef = useRef<GameState | null>(null);

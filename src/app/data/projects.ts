@@ -33,12 +33,12 @@ export const games: Project[] = [
     link: '/games/Snake'
   },
   {
-    id: 'BulletDodge',
+    id: 'DanmakuDodge',
     title: '弹幕躲避',
     description: '简约弹幕躲避生存游戏：操控小球在密集弹幕中存活更久，支持 AI 自动躲避与手动切换。',
     image: '/images/bullet-dodge.svg',
     technologies: ['React', 'TypeScript', 'Next.js', 'Canvas'],
-    link: '/games/BulletDodge'
+    link: '/games/DanmakuDodge'
   },
   {
     id: 'InvestmentSim',
@@ -85,13 +85,4 @@ export const simulations: Project[] = [
   },
 ];
 
-export const tools: Project[] = [
-  {
-    id: 'ImageStringCodec',
-    title: '图片短字符串编码',
-    description: '把图片编码成尽可能短的字符串，支持可选压缩（WebP/JPEG 质量可控）与解码还原下载。',
-    image: '/images/image-string-codec.svg',
-    technologies: ['React', 'TypeScript', 'Next.js', 'Canvas'],
-    link: '/tools/ImageStringCodec'
-  },
-];
+export const tools: Project[] = [];
