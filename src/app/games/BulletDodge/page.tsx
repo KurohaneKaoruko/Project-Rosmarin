@@ -598,19 +598,29 @@ export default function BulletDodgePage() {
       }
     };
 
+    const finalizeGameover = (s: GameState) => {
+      if (s.score > bestScoreRef.current) {
+        bestScoreRef.current = s.score;
+        window.localStorage.setItem('bullet-dodge-best-score', String(bestScoreRef.current));
+      }
+      syncHud();
+    };
+
     const handlePlayerHit = () => {
       const s = stateRef.current;
-      if (!s) return;
-      if (s.player.invulnTimer > 0) return;
+      if (!s) return false;
+      if (s.player.invulnTimer > 0) return false;
       spawnParticles(s.player.x, s.player.y, '#fb7185', 22, 180, 0.7);
       const nextLives = s.lives - 1;
       s.lives = Math.max(0, nextLives);
       s.bullets = s.bullets.filter((bullet) => bullet.owner === 'player');
       if (nextLives > 0) {
         s.player.invulnTimer = PLAYER_INVULN_TIME;
+        return false;
       } else {
         s.mode = 'gameover';
         s.player.invulnTimer = 0;
+        return true;
       }
     };
 
@@ -653,6 +663,10 @@ export default function BulletDodgePage() {
     const update = (dt: number) => {
       const s = stateRef.current;
       if (!s || s.mode === 'menu' || s.mode === 'paused') return;
+      if (s.mode === 'gameover') {
+        finalizeGameover(s);
+        return;
+      }
 
       s.time += dt;
       s.intensity = getIntensity(s.time);
@@ -732,9 +746,10 @@ export default function BulletDodgePage() {
       );
       s.particles = s.particles.filter((particle) => particle.life > 0);
 
+      let gameoverTriggered = false;
       for (const enemy of s.enemies) {
         if (Math.hypot(enemy.x - s.player.x, enemy.y - s.player.y) < enemy.r + s.player.r) {
-          handlePlayerHit();
+          if (handlePlayerHit()) gameoverTriggered = true;
         }
       }
 
@@ -742,18 +757,14 @@ export default function BulletDodgePage() {
         if (bullet.owner === 'enemy') {
           const hit = Math.hypot(bullet.x - s.player.x, bullet.y - s.player.y) < bullet.r + s.player.r;
           if (hit) {
-            handlePlayerHit();
+            if (handlePlayerHit()) gameoverTriggered = true;
             break;
           }
         }
       }
 
-      if (s.mode === 'gameover') {
-        if (s.score > bestScoreRef.current) {
-          bestScoreRef.current = s.score;
-          window.localStorage.setItem('bullet-dodge-best-score', String(bestScoreRef.current));
-        }
-        syncHud();
+      if (gameoverTriggered) {
+        finalizeGameover(s);
         return;
       }
 
