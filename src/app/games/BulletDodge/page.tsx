@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Navigation from '../../components/Navigation';
 import AIScriptModal from './components/AIScriptModal';
 import { computeAIStep } from './function/aiEngine';
+import type { AIScriptRunner, AIScriptState, AIScriptUtils } from './function/aiEngine';
 import { DEFAULT_AI_SCRIPT, highlightScript } from './function/customScript';
 import {
   BULLET_MARGIN,
@@ -81,7 +82,7 @@ export default function BulletDodgePage() {
   const [showAIScript, setShowAIScript] = useState(false);
   const [aiScript, setAiScript] = useState(DEFAULT_AI_SCRIPT);
   const [aiScriptError, setAiScriptError] = useState<string | null>(null);
-  const aiScriptRef = useRef<((state: any, utils: any) => any) | null>(null);
+  const aiScriptRef = useRef<AIScriptRunner | null>(null);
   const aiScriptErrorRef = useRef<string | null>(null);
   const aiModeRef = useRef<'builtin' | 'custom'>('builtin');
   const aiPreRef = useRef<HTMLPreElement | null>(null);
@@ -92,8 +93,11 @@ export default function BulletDodgePage() {
 
   const applyAIScript = useCallback((source: string) => {
     try {
-      const fn = new Function('state', 'utils', `"use strict";\n${source}`);
-      aiScriptRef.current = (state: any, utils: any) => fn(state, utils);
+      const fn = new Function('state', 'utils', `"use strict";\n${source}`) as (
+        state: AIScriptState,
+        utils: AIScriptUtils,
+      ) => unknown;
+      aiScriptRef.current = (state, utils) => fn(state, utils);
       aiScriptErrorRef.current = null;
       setAiScriptError(null);
       window.localStorage.setItem('bullet-dodge-ai-script', source);
@@ -520,7 +524,7 @@ export default function BulletDodgePage() {
 
     const triggerBomb = () => {
       const s = stateRef.current;
-      if (!s || s.mode !== 'running') return;
+      if (!s || s.mode === 'menu' || s.mode === 'paused') return;
       if (s.player.bombs <= 0) return;
       s.player.bombs -= 1;
       const level = s.player.spreadLevel;
@@ -646,7 +650,7 @@ export default function BulletDodgePage() {
 
     const update = (dt: number) => {
       const s = stateRef.current;
-      if (!s || s.mode !== 'running') return;
+      if (!s || s.mode === 'menu' || s.mode === 'paused') return;
 
       s.time += dt;
       s.intensity = getIntensity(s.time);

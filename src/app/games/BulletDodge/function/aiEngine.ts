@@ -1,5 +1,5 @@
 import { DIRECTIONS, PLAYER_MAX_BOMBS, PLAYER_MAX_LIVES, WORLD, clamp } from './gameUtils';
-import type { Enemy, GameState, Pickup } from '../types';
+import type { BulletOwner, Enemy, EnemyType, GameState, Pickup, PickupKind } from '../types';
 
 type AiMode = 'builtin' | 'custom';
 
@@ -10,12 +10,35 @@ type AiDirRef = {
   };
 };
 
-type AiScriptRunner = ((state: any, utils: any) => any) | null;
+export type AIScriptState = {
+  time: number;
+  score: number;
+  lives: number;
+  intensity: number;
+  bounds: { width: number; height: number };
+  player: { x: number; y: number; r: number; speed: number; bombs: number };
+  enemies: { x: number; y: number; vx: number; vy: number; r: number; hp: number; type: EnemyType }[];
+  bullets: { x: number; y: number; vx: number; vy: number; r: number; owner: BulletOwner }[];
+  pickups: { x: number; y: number; vx: number; vy: number; r: number; kind: PickupKind }[];
+};
+
+export type AIScriptUtils = {
+  clamp: typeof clamp;
+  length: (dx: number, dy: number) => number;
+  normalize: (vec: { dx: number; dy: number }) => { dx: number; dy: number };
+  direction: (from: { x: number; y: number }, to: { x: number; y: number }) => { dx: number; dy: number };
+  nearestEnemy: (from: { x: number; y: number }, enemies: AIScriptState['enemies']) => AIScriptState['enemies'][number] | null;
+  nearestBullet: (from: { x: number; y: number }, bullets: AIScriptState['bullets']) => AIScriptState['bullets'][number] | null;
+  nearestPickup: (from: { x: number; y: number }, pickups: AIScriptState['pickups']) => AIScriptState['pickups'][number] | null;
+  avoidBullets: (from: { x: number; y: number }, bullets: AIScriptState['bullets']) => { dx: number; dy: number };
+};
+
+export type AIScriptRunner = (state: AIScriptState, utils: AIScriptUtils) => unknown;
 
 type AiStepParams = {
   state: GameState;
   aiMode: AiMode;
-  aiScript: AiScriptRunner;
+  aiScript: AIScriptRunner | null;
   aiScriptErrorRef: { current: string | null };
   setAiScriptError: (value: string | null) => void;
   aiDirRef: AiDirRef;
@@ -30,7 +53,7 @@ export function computeAIStep({
   aiDirRef,
 }: AiStepParams) {
   if (aiMode === 'custom' && aiScript) {
-    const snapshot = {
+    const snapshot: AIScriptState = {
       time: s.time,
       score: s.score,
       lives: s.lives,
@@ -70,7 +93,7 @@ export function computeAIStep({
       })),
     };
 
-    const utils = {
+    const utils: AIScriptUtils = {
       clamp,
       length: (dx: number, dy: number) => Math.hypot(dx, dy),
       normalize: (vec: { dx: number; dy: number }) => {
@@ -140,11 +163,13 @@ export function computeAIStep({
       let dx = 0;
       let dy = 0;
       if (Array.isArray(result)) {
-        dx = Number(result[0]);
-        dy = Number(result[1]);
+        const arr = result as unknown[];
+        dx = Number(arr[0]);
+        dy = Number(arr[1]);
       } else if (result && typeof result === 'object') {
-        dx = Number((result as any).dx);
-        dy = Number((result as any).dy);
+        const record = result as Record<string, unknown>;
+        dx = Number(record.dx);
+        dy = Number(record.dy);
       }
       if (!Number.isFinite(dx) || !Number.isFinite(dy)) {
         dx = 0;

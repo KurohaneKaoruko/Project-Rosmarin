@@ -7,7 +7,7 @@ type Props = {
   script: string;
   highlighted: string;
   error: string | null;
-  preRef: RefObject<HTMLPreElement>;
+  preRef: RefObject<HTMLPreElement | null>;
   onClose: () => void;
   onChange: (value: string) => void;
   onApply: () => void;
