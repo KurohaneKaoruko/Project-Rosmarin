@@ -603,12 +603,14 @@ export default function BulletDodgePage() {
       if (!s) return;
       if (s.player.invulnTimer > 0) return;
       spawnParticles(s.player.x, s.player.y, '#fb7185', 22, 180, 0.7);
-      if (s.lives > 1) {
-        s.lives -= 1;
+      const nextLives = s.lives - 1;
+      s.lives = Math.max(0, nextLives);
+      s.bullets = s.bullets.filter((bullet) => bullet.owner === 'player');
+      if (nextLives > 0) {
         s.player.invulnTimer = PLAYER_INVULN_TIME;
-        s.bullets = s.bullets.filter((bullet) => bullet.owner === 'player');
       } else {
         s.mode = 'gameover';
+        s.player.invulnTimer = 0;
       }
     };
 
