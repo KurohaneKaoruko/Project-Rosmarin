@@ -33,6 +33,14 @@ export const games: Project[] = [
     link: '/games/Snake'
   },
   {
+    id: 'BulletDodge',
+    title: '弹幕躲避',
+    description: '简约弹幕躲避生存游戏：操控小球在密集弹幕中存活更久，支持 AI 自动躲避与手动切换。',
+    image: '/images/bullet-dodge.svg',
+    technologies: ['React', 'TypeScript', 'Next.js', 'Canvas'],
+    link: '/games/BulletDodge'
+  },
+  {
     id: 'InvestmentSim',
     title: '模拟投资',
     description: '基于时间秒序号的行情模拟投资小游戏，价格每秒更新，历史按 5 分钟间隔展示，支持买卖操作与本地存档，确保所有玩家看到相同价格序列。',
