@@ -3,7 +3,7 @@
 import type { PointerEvent as ReactPointerEvent } from 'react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import Navigation from '../../components/Navigation';
-import type { AntColorTheme } from './simulation';
+import type { AntColorTheme, AntMode } from './simulation';
 import { LangtonsAntSim } from './simulation';
 
 export default function LangtonsAntPage() {
@@ -19,8 +19,22 @@ export default function LangtonsAntPage() {
   const [theme, setTheme] = useState<AntColorTheme>('dark');
   const [syncUpdate, setSyncUpdate] = useState(false);
   const [density, setDensity] = useState(0.15);
+  const [mode, setMode] = useState<AntMode>('classic');
+  const [resolutionScale, setResolutionScale] = useState(1);
+  const [colorStep, setColorStep] = useState(1);
+  const [colorStepMin, setColorStepMin] = useState(1);
+  const [colorStepMax, setColorStepMax] = useState(8);
+  const [colorStepNoZero, setColorStepNoZero] = useState(true);
+  const [trace, setTrace] = useState(false);
 
-  const [stats, setStats] = useState<{ steps: number; ants: number; cols: number; rows: number } | null>(null);
+  const [stats, setStats] = useState<{
+    steps: number;
+    ants: number;
+    cols: number;
+    rows: number;
+    mode: AntMode;
+    scale: number;
+  } | null>(null);
 
   const runningRef = useRef(running);
   const stepsPerSecondRef = useRef(stepsPerSecond);
@@ -28,6 +42,8 @@ export default function LangtonsAntPage() {
   const antsRef = useRef(ants);
   const wrapRefValue = useRef(wrap);
   const themeRef = useRef<AntColorTheme>(theme);
+  const modeRef = useRef<AntMode>(mode);
+  const resolutionScaleRef = useRef(resolutionScale);
 
   useEffect(() => {
     runningRef.current = running;
@@ -51,6 +67,29 @@ export default function LangtonsAntPage() {
     themeRef.current = theme;
     simRef.current?.setConfig({ theme });
   }, [theme]);
+  useEffect(() => {
+    modeRef.current = mode;
+    simRef.current?.setConfig({ mode });
+  }, [mode]);
+  useEffect(() => {
+    resolutionScaleRef.current = resolutionScale;
+    simRef.current?.setConfig({ resolutionScale });
+  }, [resolutionScale]);
+  useEffect(() => {
+    simRef.current?.setConfig({ colorStep });
+  }, [colorStep]);
+  useEffect(() => {
+    simRef.current?.setConfig({ colorStepMin });
+  }, [colorStepMin]);
+  useEffect(() => {
+    simRef.current?.setConfig({ colorStepMax });
+  }, [colorStepMax]);
+  useEffect(() => {
+    simRef.current?.setConfig({ colorStepNoZero });
+  }, [colorStepNoZero]);
+  useEffect(() => {
+    simRef.current?.setConfig({ trace });
+  }, [trace]);
   useEffect(() => {
     cellSizeRef.current = cellSize;
     const sim = simRef.current;
@@ -78,6 +117,8 @@ export default function LangtonsAntPage() {
       ants: antsRef.current,
       wrap: wrapRefValue.current,
       theme: themeRef.current,
+      mode: modeRef.current,
+      resolutionScale: resolutionScaleRef.current,
     });
 
     const doResize = () => {
@@ -117,7 +158,12 @@ export default function LangtonsAntPage() {
 
   const bgClass = theme === 'dark' ? 'bg-zinc-900' : 'bg-white';
   const overlayClass = theme === 'dark' ? 'text-white/60' : 'text-zinc-900/60';
-  const turnHint = theme === 'dark' ? '黑格右转，白格左转，同时翻转格子颜色' : '白格右转，黑格左转，同时翻转格子颜色';
+  const turnHint =
+    mode === 'fullColor'
+      ? '每种颜色决定转向与递增通道，颜色通道按规则递增'
+      : theme === 'dark'
+        ? '黑格右转，白格左转，同时翻转格子颜色'
+        : '白格右转，黑格左转，同时翻转格子颜色';
 
   const actions = useMemo(
     () => [
@@ -155,9 +201,8 @@ export default function LangtonsAntPage() {
     if (!sim) return;
     const p = mapEventToCanvas(e);
     if (!p) return;
-    const key = `${Math.floor(p.x / Math.max(1, Math.floor(cellSizeRef.current * (window.devicePixelRatio || 1))))}:${Math.floor(
-      p.y / Math.max(1, Math.floor(cellSizeRef.current * (window.devicePixelRatio || 1)))
-    )}`;
+    const key = sim.getCellKeyAt(p.x, p.y);
+    if (!key) return;
     if (lastCellKeyRef.current === key) return;
     lastCellKeyRef.current = key;
     sim.toggleCellAt(p.x, p.y);
@@ -181,12 +226,18 @@ export default function LangtonsAntPage() {
           />
 
           <div className={`absolute top-4 left-4 ${overlayClass} font-mono text-[11px] pointer-events-none whitespace-pre`}>
-            {stats ? `STEPS: ${stats.steps}  ANTS: ${stats.ants}  GRID: ${stats.cols}x${stats.rows}  MODE: ${syncUpdate ? 'SYNC' : 'SEQ'}` : '...'}
+            {stats
+              ? `STEPS: ${stats.steps}  ANTS: ${stats.ants}  GRID: ${stats.cols}x${stats.rows}  MODE: ${
+                  stats.mode === 'fullColor'
+                    ? `COLOR${stats.scale > 1 ? ` HRx${stats.scale}` : ''}`
+                    : `CLASSIC${stats.scale > 1 ? ` HRx${stats.scale}` : ''}`
+                }  UPDATE: ${stats.mode === 'classic' && syncUpdate ? 'SYNC' : 'SEQ'}`
+              : '...'}
           </div>
         </div>
 
         <div className="w-full lg:w-96 bg-white border-l border-zinc-200 flex flex-col flex-1 lg:flex-none lg:h-full overflow-hidden">
-          <div className="p-6 overflow-y-auto flex-1 space-y-8">
+          <div className="p-5 overflow-y-auto flex-1 space-y-6">
             <div>
               <h2 className="text-lg font-bold text-zinc-900 flex items-center gap-2">
                 <span className="w-1 h-4 bg-blue-600"></span>
@@ -195,7 +246,7 @@ export default function LangtonsAntPage() {
               <p className="text-[10px] text-zinc-500 font-mono mt-1 uppercase">{'/// 兰顿蚂蚁 (Zero Player Game)'}</p>
             </div>
 
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
               {actions.map((a) => (
                 <button
                   key={a.label}
@@ -203,9 +254,9 @@ export default function LangtonsAntPage() {
                   className={
                     a.kind === 'primary'
                       ? running
-                        ? 'px-4 py-3 rounded-md font-bold text-sm transition-colors bg-amber-100 text-amber-700 hover:bg-amber-200'
-                        : 'px-4 py-3 rounded-md font-bold text-sm transition-colors bg-blue-100 text-blue-700 hover:bg-blue-200'
-                      : 'px-4 py-3 bg-zinc-100 text-zinc-600 rounded-md font-bold text-sm hover:bg-zinc-200 transition-colors'
+                        ? 'px-3 py-2 rounded-md font-bold text-xs transition-colors bg-amber-100 text-amber-700 hover:bg-amber-200'
+                        : 'px-3 py-2 rounded-md font-bold text-xs transition-colors bg-blue-100 text-blue-700 hover:bg-blue-200'
+                      : 'px-3 py-2 bg-zinc-100 text-zinc-600 rounded-md font-bold text-xs hover:bg-zinc-200 transition-colors'
                   }
                 >
                   {a.label}
@@ -216,6 +267,7 @@ export default function LangtonsAntPage() {
             <div className="space-y-6">
               <ControlSlider label="速度 (Steps/s)" value={stepsPerSecond} min={10} max={5000} step={10} onChange={setStepsPerSecond} />
               <ControlSlider label="格子大小 (px)" value={cellSize} min={2} max={14} step={1} onChange={setCellSize} />
+              <ControlSlider label="高分辨率倍率" value={resolutionScale} min={1} max={6} step={1} onChange={setResolutionScale} />
               <ControlSlider label="蚂蚁数量" value={ants} min={1} max={16} step={1} onChange={setAnts} />
               <ControlSlider label="随机密度" value={density} min={0} max={0.6} step={0.01} onChange={setDensity} />
             </div>
@@ -247,8 +299,51 @@ export default function LangtonsAntPage() {
                 >
                   {syncUpdate ? '更新: 同步' : '更新: 顺序'}
                 </button>
+                <button
+                  onClick={() => setMode((m) => (m === 'classic' ? 'fullColor' : 'classic'))}
+                  className={`px-3 py-2 rounded text-xs font-bold transition-colors ${
+                    mode === 'fullColor' ? 'bg-fuchsia-50 text-fuchsia-700 hover:bg-fuchsia-100' : 'bg-zinc-100 text-zinc-600 hover:bg-zinc-200'
+                  }`}
+                >
+                  {mode === 'fullColor' ? '模式: 全色彩' : '模式: 经典'}
+                </button>
               </div>
             </div>
+
+            {mode === 'fullColor' ? (
+              <div className="space-y-3 pt-4 border-t border-zinc-100">
+                <div className="text-xs font-bold text-zinc-900 uppercase tracking-wider">全色彩参数</div>
+                <div className="space-y-4">
+                  <ControlSlider label="颜色步长 (dr)" value={colorStep} min={0} max={16} step={1} onChange={setColorStep} />
+                  <ControlSlider label="随机步长最小 (d_min)" value={colorStepMin} min={0} max={16} step={1} onChange={setColorStepMin} />
+                  <ControlSlider label="随机步长最大 (d_max)" value={colorStepMax} min={1} max={32} step={1} onChange={setColorStepMax} />
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    onClick={() => setColorStepNoZero((v) => !v)}
+                    className={`px-3 py-2 rounded text-xs font-bold transition-colors ${
+                      colorStepNoZero ? 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100' : 'bg-zinc-100 text-zinc-600 hover:bg-zinc-200'
+                    }`}
+                  >
+                    {colorStepNoZero ? '步长非零: 开' : '步长非零: 关'}
+                  </button>
+                  <button
+                    onClick={() => setTrace((v) => !v)}
+                    className={`px-3 py-2 rounded text-xs font-bold transition-colors ${
+                      trace ? 'bg-amber-50 text-amber-700 hover:bg-amber-100' : 'bg-zinc-100 text-zinc-600 hover:bg-zinc-200'
+                    }`}
+                  >
+                    {trace ? '追踪线: 开' : '追踪线: 关'}
+                  </button>
+                  <button
+                    onClick={() => simRef.current?.regenerateColorRules()}
+                    className="px-3 py-2 bg-fuchsia-50 text-fuchsia-700 rounded text-xs font-bold hover:bg-fuchsia-100 transition-colors"
+                  >
+                    重置规则
+                  </button>
+                </div>
+              </div>
+            ) : null}
 
             <div className="space-y-3 pt-4 border-t border-zinc-100">
               <div className="text-xs font-bold text-zinc-900 uppercase tracking-wider">操作</div>
@@ -289,6 +384,7 @@ export default function LangtonsAntPage() {
                 <li>{turnHint}</li>
                 <li>中速会先出现混沌，随后进入“高速公路”结构</li>
                 <li>在画布上拖动可以翻转格子，改变演化路径</li>
+                {mode === 'fullColor' ? <li>高分辨率倍率越大越耗性能</li> : null}
               </ul>
             </div>
           </div>
