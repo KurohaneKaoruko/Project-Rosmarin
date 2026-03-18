@@ -18,7 +18,7 @@ function dirFromKey(key: string): Direction | null {
 }
 
 export default function SnakePage() {
-  const { state, settings, setSettings, setDirection, step, restart, togglePause } = useSnake({ width: 20, height: 20, tickMs: 120 });
+  const { state, settings, setSettings, setDirection, step, restart, togglePause } = useSnake({ width: 32, height: 32, tickMs: 120 });
   const ai = useSnakeAIController({ state, onStep: step });
   const startAI = ai.start;
   const [autoStartAI, setAutoStartAI] = useState(false);
@@ -115,9 +115,9 @@ export default function SnakePage() {
       
       <Navigation title="SNAKE_AI" />
 
-      <div className="pt-20 pb-12 px-4 sm:px-6 lg:px-8 relative z-10">
-        <div className="mx-auto w-full max-w-[1400px]">
-          <div className="flex flex-col xl:flex-row gap-8 items-start justify-center">
+      <div className="pt-16 pb-10 px-4 sm:px-6 lg:px-8 relative z-10">
+        <div className="mx-auto w-full max-w-[1600px]">
+          <div className="grid grid-cols-1 xl:grid-cols-[320px_minmax(520px,1fr)_320px] gap-6 items-stretch">
             
             {/* Left Column: Game Settings */}
             <section className="w-full xl:w-[320px] bg-white/80 backdrop-blur-sm border border-zinc-200 shadow-xl shadow-zinc-200/50 rounded-lg p-6 space-y-8 order-2 xl:order-1 transition-all hover:shadow-2xl hover:shadow-zinc-200/60 duration-300 relative">
@@ -191,7 +191,7 @@ export default function SnakePage() {
               <div>
                 <label className="block text-[10px] font-bold text-zinc-400 font-mono uppercase mb-3 tracking-wider">地图尺寸</label>
                 <div className="flex bg-zinc-100 p-1 rounded-lg">
-                  {[16, 20, 24].map((size) => (
+                  {[32, 64, 96].map((size) => (
                     <button
                       key={size}
                       onClick={() => {
@@ -229,8 +229,8 @@ export default function SnakePage() {
             </section>
 
             {/* Middle Column: Simulation Area */}
-            <section className="flex-1 flex flex-col items-center order-1 xl:order-2 w-full">
-              <div className="w-full max-w-[500px] mb-6 flex items-center justify-between px-1">
+            <section className="w-full flex flex-col items-stretch order-1 xl:order-2">
+              <div className="w-full mb-3 flex items-center justify-between px-1">
                 <div className="flex items-center gap-3">
                   <div className={`w-2 h-2 rounded-full ${ai.isRunning ? 'bg-blue-500 animate-pulse' : 'bg-zinc-300'}`}></div>
                   <span className="text-sm font-bold text-zinc-700 tracking-wider uppercase">模拟视窗</span>

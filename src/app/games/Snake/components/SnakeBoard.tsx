@@ -1,10 +1,6 @@
-import { useMemo } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import type { Point, SnakeStatus } from '../types';
 import { computeFinalScore } from '../function/scoring';
-
-function keyOf(p: Point): string {
-  return `${p.x},${p.y}`;
-}
 
 export type SnakeBoardProps = {
   width: number;
@@ -19,51 +15,127 @@ export type SnakeBoardProps = {
 export default function SnakeBoard(props: SnakeBoardProps) {
   const { width, height, snake, food, tick, status, onRestart } = props;
 
-  const { snakeSet, headKey, foodKey } = useMemo(() => {
-    const s = new Set<string>();
-    for (const p of snake) s.add(keyOf(p));
-    return {
-      snakeSet: s,
-      headKey: snake.length > 0 ? keyOf(snake[0]) : '',
-      foodKey: keyOf(food),
-    };
-  }, [snake, food]);
-
-  const cellCount = width * height;
-  const cells = useMemo(() => Array.from({ length: cellCount }, (_, i) => i), [cellCount]);
   const finalScore = computeFinalScore({ length: snake.length, steps: tick });
   const didFinish = status === 'game_over' || status === 'passed';
+  const targetSize = width >= 96 ? 800 : width >= 64 ? 680 : 520;
+  const boardSize = `min(100%, ${targetSize}px, 78vh)`;
+
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const gridRef = useRef<HTMLCanvasElement | null>(null);
+  const sizeRef = useRef({ w: 0, h: 0, cellW: 0, cellH: 0 });
+  const snakeRef = useRef<Point[]>(snake);
+  const foodRef = useRef<Point>(food);
+
+  const drawFrame = useCallback(() => {
+    const canvas = canvasRef.current;
+    const grid = gridRef.current;
+    if (!canvas || !grid) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    const { w, h, cellW, cellH } = sizeRef.current;
+    if (w <= 0 || h <= 0) return;
+
+    const curSnake = snakeRef.current;
+    const curFood = foodRef.current;
+    const head = curSnake[0];
+
+    ctx.clearRect(0, 0, w, h);
+    ctx.drawImage(grid, 0, 0);
+
+    if (curFood.x >= 0 && curFood.y >= 0) {
+      const fx = curFood.x * cellW + cellW * 0.5;
+      const fy = curFood.y * cellH + cellH * 0.5;
+      const r = Math.min(cellW, cellH) * 0.35;
+      ctx.fillStyle = '#10B981';
+      ctx.beginPath();
+      ctx.arc(fx, fy, r, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    ctx.fillStyle = '#3F3F46';
+    for (let i = curSnake.length - 1; i >= 0; i--) {
+      const seg = curSnake[i];
+      if (head && seg.x === head.x && seg.y === head.y) continue;
+      ctx.fillRect(seg.x * cellW, seg.y * cellH, cellW, cellH);
+    }
+
+    if (head) {
+      ctx.fillStyle = '#2563EB';
+      ctx.fillRect(head.x * cellW, head.y * cellH, cellW, cellH);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!gridRef.current) gridRef.current = document.createElement('canvas');
+  }, []);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    const grid = gridRef.current;
+    if (!canvas || !grid) return;
+    const ctx = canvas.getContext('2d');
+    const gctx = grid.getContext('2d');
+    if (!ctx || !gctx) return;
+
+    const resize = () => {
+      const rect = canvas.getBoundingClientRect();
+      const dpr = window.devicePixelRatio || 1;
+      const w = Math.max(1, Math.floor(rect.width * dpr));
+      const h = Math.max(1, Math.floor(rect.height * dpr));
+      if (w === sizeRef.current.w && h === sizeRef.current.h) return;
+
+      canvas.width = w;
+      canvas.height = h;
+      grid.width = w;
+      grid.height = h;
+
+      const cellW = w / width;
+      const cellH = h / height;
+      sizeRef.current = { w, h, cellW, cellH };
+
+      gctx.clearRect(0, 0, w, h);
+      gctx.fillStyle = '#FFFFFF';
+      gctx.fillRect(0, 0, w, h);
+
+      if (cellW >= 6 && cellH >= 6) {
+        gctx.strokeStyle = 'rgba(24,24,27,0.08)';
+        gctx.lineWidth = 1;
+        gctx.beginPath();
+        for (let x = 0; x <= width; x++) {
+          const px = Math.round(x * cellW) + 0.5;
+          gctx.moveTo(px, 0);
+          gctx.lineTo(px, h);
+        }
+        for (let y = 0; y <= height; y++) {
+          const py = Math.round(y * cellH) + 0.5;
+          gctx.moveTo(0, py);
+          gctx.lineTo(w, py);
+        }
+        gctx.stroke();
+      }
+
+      drawFrame();
+    };
+
+    const ro = new ResizeObserver(resize);
+    ro.observe(canvas);
+    resize();
+    return () => ro.disconnect();
+  }, [width, height, boardSize, drawFrame]);
+
+  useEffect(() => {
+    snakeRef.current = snake;
+    foodRef.current = food;
+    drawFrame();
+  }, [snake, food, tick, drawFrame]);
 
   return (
-    <div className="w-full flex justify-center py-4">
-      <div className="relative w-[360px] h-[360px] sm:w-[480px] sm:h-[480px] bg-white border border-zinc-300 shadow-2xl rounded-sm overflow-hidden ring-4 ring-zinc-100">
-        <div
-          className="absolute inset-0 grid bg-zinc-50/50"
-          style={{
-            gridTemplateColumns: `repeat(${width}, minmax(0, 1fr))`,
-            gridTemplateRows: `repeat(${height}, minmax(0, 1fr))`,
-          }}
-        >
-          {cells.map((i) => {
-            const x = i % width;
-            const y = Math.floor(i / width);
-            const k = `${x},${y}`;
-            const isHead = k === headKey;
-            const isSnake = snakeSet.has(k);
-            const isFood = k === foodKey;
-
-            let className = 'border border-zinc-200/30 transition-all duration-100';
-            
-            if (isSnake) {
-                className += isHead ? ' bg-blue-600 z-10 rounded-sm' : ' bg-zinc-700 rounded-[1px]';
-            }
-            if (isFood) {
-                className += ' bg-emerald-500 rounded-full scale-75 shadow-sm animate-pulse';
-            }
-            
-            return <div key={k} className={className} />;
-          })}
-        </div>
+    <div className="w-full flex justify-center py-2">
+      <div
+        className="relative bg-white border border-zinc-300 shadow-2xl rounded-sm overflow-hidden ring-4 ring-zinc-100 aspect-square"
+        style={{ width: boardSize }}
+      >
+        <canvas ref={canvasRef} className="absolute inset-0 w-full h-full" />
 
         {didFinish ? (
           <div className="absolute inset-0 bg-zinc-900/50 backdrop-blur-sm flex items-center justify-center animate-in fade-in duration-300 z-20">
