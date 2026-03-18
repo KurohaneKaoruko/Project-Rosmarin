@@ -93,4 +93,13 @@ export const simulations: Project[] = [
   },
 ];
 
-export const tools: Project[] = [];
+export const tools: Project[] = [
+  {
+    id: 'Brainfuck',
+    title: 'Brainfuck 解释器',
+    description: '轻量 Brainfuck 解释器：支持运行/单步、输入输出、内存窗与步数限制，适合快速验证与教学演示。',
+    image: '/images/brainfuck.svg',
+    technologies: ['React', 'TypeScript', 'Interpreter'],
+    link: '/tools/Brainfuck'
+  },
+];

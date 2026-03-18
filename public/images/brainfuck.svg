@@ -1,0 +1,13 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="512" height="512" rx="48" fill="#0B1220"/>
+  <rect x="32" y="32" width="448" height="448" rx="32" fill="#0F172A" stroke="#2563EB" stroke-width="8"/>
+  <rect x="80" y="120" width="352" height="272" rx="18" fill="#111827" stroke="#1E293B" stroke-width="2"/>
+  <text x="96" y="200" fill="#E2E8F0" font-size="56" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace">
+    &gt;&lt;+-.,[]
+  </text>
+  <text x="96" y="270" fill="#94A3B8" font-size="20" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace">
+    BRAINFUCK
+  </text>
+  <rect x="96" y="310" width="220" height="10" rx="5" fill="#1D4ED8"/>
+  <rect x="324" y="310" width="72" height="10" rx="5" fill="#0EA5E9"/>
+</svg>
