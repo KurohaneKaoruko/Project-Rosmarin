@@ -68,6 +68,14 @@ export const simulations: Project[] = [
     link: '/simulations/LangtonsAnt'
   },
   {
+    id: 'TSPAntColony',
+    title: 'TSP 蚁群算法',
+    description: '旅行商问题的蚁群优化：动态可视化信息素演化与最优路径收敛过程，支持参数调节。',
+    image: '/images/tsp-ant-colony.svg',
+    technologies: ['React', 'TypeScript', 'Canvas'],
+    link: '/simulations/TSPAntColony'
+  },
+  {
     id: 'ParticleLife',
     title: '粒子生命 (Particle Life)',
     description: '基于 WebGPU 加速的粒子人工生命模拟。数千个粒子根据简单的交互矩阵涌现出复杂的类生命行为。',
