@@ -91,6 +91,14 @@ export const simulations: Project[] = [
     technologies: ['React', 'TypeScript', 'Next.js', 'Canvas'],
     link: '/simulations/PendulumSim'
   },
+  {
+    id: 'Mandelbrot',
+    title: '分形几何 (Fractal Geometry)',
+    description: '分形几何可视化合集：Mandelbrot / Julia / Newton 分形，支持中心、缩放、迭代次数与参数调节。',
+    image: '/images/fractal-geometry.svg',
+    technologies: ['React', 'TypeScript', 'Canvas'],
+    link: '/simulations/Mandelbrot'
+  },
 ];
 
 export const tools: Project[] = [
