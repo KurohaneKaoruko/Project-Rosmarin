@@ -17,14 +17,6 @@ export const games: Project[] = [
     link: '/games/Game2048'
   },
   {
-    id: 'FunctionIdle',
-    title: ' 函数挂机游戏',
-    description: '指数增长主题的挂机小游戏：升级参数提升增长速度，支持本地存档与离线结算，并提供增长曲线可视化。',
-    image: '/images/function-idle.svg',
-    technologies: ['React', 'TypeScript', 'Next.js', 'Tailwind CSS'],
-    link: '/games/FunctionIdle'
-  },
-  {
     id: 'Snake',
     title: '贪吃蛇',
     description: '经典贪吃蛇小游戏：支持键盘操作与暂停重开，并提供可一键接管的 AI 玩家（自动寻路与避险策略）。',
@@ -39,15 +31,7 @@ export const games: Project[] = [
     image: '/images/bullet-dodge.svg',
     technologies: ['React', 'TypeScript', 'Next.js', 'Canvas'],
     link: '/games/DanmakuDodge'
-  },
-  {
-    id: 'InvestmentSim',
-    title: '模拟投资',
-    description: '基于时间秒序号的行情模拟投资小游戏，价格每秒更新，历史按 5 分钟间隔展示，支持买卖操作与本地存档，确保所有玩家看到相同价格序列。',
-    image: '/images/investment-sim.svg',
-    technologies: ['React', 'TypeScript', 'Next.js', 'Tailwind CSS'],
-    link: '/games/InvestmentSim'
-  },
+  }
 ];
 
 export const simulations: Project[] = [
@@ -98,6 +82,14 @@ export const simulations: Project[] = [
     image: '/images/fractal-geometry.svg',
     technologies: ['React', 'TypeScript', 'Canvas'],
     link: '/simulations/Mandelbrot'
+  },
+  {
+    id: 'DigitSumTurtle',
+    title: '数位和海龟绘图 (Digit-Sum Turtle)',
+    description: '遍历自然数：n 进制数位和为偶数则前进画线，为奇数则旋转 360°/m。n=2 即 Thue–Morse 海龟曲线，默认参数（初始朝向右下、逆时针）呈水平延展的科赫雪花式分形；无限画布、镜头跟随自动展示完整图案。',
+    image: '/images/digit-sum-turtle.svg',
+    technologies: ['React', 'TypeScript', 'Canvas'],
+    link: '/simulations/DigitSumTurtle',
   },
 ];
 

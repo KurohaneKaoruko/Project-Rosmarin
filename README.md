@@ -24,7 +24,7 @@
 
 Project-Rosmarin 是一个“可玩 + 可看 + 可用”的前端项目集合：
 
-- `Games`：交互性较强的游戏模块（如 2048、贪吃蛇、模拟投资等）。
+- `Games`：交互性较强的游戏模块（如 2048、贪吃蛇等）。
 - `Simulations`：偏规则与物理可视化的实验模块（如生命游戏、混沌摆、粒子生命）。
 - `Tools`：实用型处理工具（如图片短字符串编码器）。
 
@@ -35,16 +35,14 @@ Project-Rosmarin 是一个“可玩 + 可看 + 可用”的前端项目集合：
 | 分区 | 路由 | 当前内容 |
 | --- | --- | --- |
 | 首页 | `/` | 总览入口，聚合所有模块 |
-| Games | `/games` | 2048、函数挂机、贪吃蛇、模拟投资 |
-| Simulations | `/simulations` | 生命游戏、兰顿蚂蚁、粒子生命、混沌摆 |
+| Games | `/games` | 2048、贪吃蛇 |
+| Simulations | `/simulations` | 生命游戏、兰顿蚂蚁、TSP 蚁群、粒子生命、混沌摆、分形几何、数位和海龟绘图 |
 | Tools | `/tools` | 图片短字符串编码 |
 
 ### Games
 
 - `/games/Game2048`：多棋盘尺寸、撤销、自动 AI。
-- `/games/FunctionIdle`：函数增长主题挂机玩法，支持离线收益。
 - `/games/Snake`：经典贪吃蛇，带 AI 接管能力。
-- `/games/InvestmentSim`：可视化行情驱动的投资模拟。
 
 ### Simulations
 
@@ -52,6 +50,7 @@ Project-Rosmarin 是一个“可玩 + 可看 + 可用”的前端项目集合：
 - `/simulations/LangtonsAnt`：兰顿蚂蚁规则演化。
 - `/simulations/ParticleLife`：WebGPU 加速的粒子生命系统。
 - `/simulations/PendulumSim`：双摆/三摆混沌运动模拟。
+- `/simulations/DigitSumTurtle`：数位和奇偶驱动的海龟作图（Thue–Morse / 科赫雪花式分形），支持初始朝向、镜头跟随与无限画布平移缩放。
 
 ### Tools
 
