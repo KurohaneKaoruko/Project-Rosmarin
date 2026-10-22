@@ -59,7 +59,7 @@ export default function BrainfuckToolPage() {
   const outputRef = useRef('');
   const runningRef = useRef(false);
   const breakpointsRef = useRef<Set<number>>(new Set());
-  const speedRef = useRef(SPEEDS[1]);
+  const speedRef = useRef<(typeof SPEEDS)[number]>(SPEEDS[1]);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const program = useMemo(() => code.replace(/[^\[\]\+\-\<\>\.\,]/g, ''), [code]);
