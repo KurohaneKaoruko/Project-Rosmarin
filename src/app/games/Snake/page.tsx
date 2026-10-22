@@ -9,6 +9,8 @@ import { useSnake } from './function/useSnake';
 import { useSnakeAIController } from './function/useAIController';
 import type { Direction } from './types';
 
+const MAP_SIZES = [32, 64, 96, 31, 63, 95] as const;
+
 function dirFromKey(key: string): Direction | null {
   if (key === 'ArrowUp' || key === 'w' || key === 'W') return 'Up';
   if (key === 'ArrowDown' || key === 's' || key === 'S') return 'Down';
@@ -190,15 +192,15 @@ export default function SnakePage() {
               {/* Map Size */}
               <div>
                 <label className="block text-[10px] font-bold text-zinc-400 font-mono uppercase mb-3 tracking-wider">地图尺寸</label>
-                <div className="flex bg-zinc-100 p-1 rounded-lg">
-                  {[32, 64, 96].map((size) => (
+                <div className="grid grid-cols-3 gap-1 bg-zinc-100 p-1 rounded-lg">
+                  {MAP_SIZES.map((size) => (
                     <button
                       key={size}
                       onClick={() => {
                         ai.stop();
                         setSettings({ width: size, height: size });
                       }}
-                      className={`flex-1 py-2 text-[10px] font-bold tracking-widest font-mono rounded-md transition-all duration-200 ${
+                      className={`py-2 text-[10px] font-bold tracking-widest font-mono rounded-md transition-all duration-200 ${
                         settings.width === size
                           ? 'bg-white text-zinc-900 shadow-sm'
                           : 'text-zinc-400 hover:text-zinc-600'

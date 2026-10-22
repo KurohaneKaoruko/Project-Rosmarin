@@ -362,7 +362,7 @@ function getHamiltonianMove(state: SnakeState, legal: Direction[]): AIMove {
     cachedCycle = new HamiltonianCycle(state.width, state.height);
   }
   const cycle = cachedCycle;
-  
+
   const head = state.snake[0];
   const tail = state.snake[state.snake.length - 1];
   const food = state.food;
@@ -370,9 +370,9 @@ function getHamiltonianMove(state: SnakeState, legal: Direction[]): AIMove {
   const headIdx = cycle.getCycleIndex(head);
   const tailIdx = cycle.getCycleIndex(tail);
   const foodIdx = cycle.getCycleIndex(food);
-  
+
   // Calculate standard next move on cycle
-  const nextIdxOnCycle = (headIdx + 1) % (state.width * state.height);
+  const nextIdxOnCycle = (headIdx + 1) % cycle.cycleLength;
   const nextPosOnCycle = cycle.cycle[nextIdxOnCycle];
   
   // Find direction for standard move
@@ -385,7 +385,9 @@ function getHamiltonianMove(state: SnakeState, legal: Direction[]): AIMove {
     }
   }
   
-  // If standard move is somehow illegal, fallback to Safe Strategy
+  // If standard move is somehow illegal, fallback to Safe Strategy.
+  // On odd x odd boards the generated cycle has one non-adjacent edge, so the
+  // snake reaches this branch when it crosses that break.
   if (!bestDir) {
       return getSafeMove(state, legal);
   }

@@ -17,7 +17,7 @@ export default function SnakeBoard(props: SnakeBoardProps) {
 
   const finalScore = computeFinalScore({ length: snake.length, steps: tick });
   const didFinish = status === 'game_over' || status === 'passed';
-  const targetSize = width >= 96 ? 800 : width >= 64 ? 680 : 520;
+  const targetSize = width >= 95 ? 800 : width >= 63 ? 680 : 520;
   const boardSize = `min(100%, ${targetSize}px, 78vh)`;
 
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
