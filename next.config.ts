@@ -2,6 +2,14 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   productionBrowserSourceMaps: true,
+  async redirects() {
+    return [
+      // simulations -> visualizations（分形/海龟绘图/蚁群已迁移至可视化分类）
+      { source: '/simulations/Mandelbrot', destination: '/visualizations/Mandelbrot', permanent: true },
+      { source: '/simulations/DigitSumTurtle', destination: '/visualizations/DigitSumTurtle', permanent: true },
+      { source: '/simulations/TSPAntColony', destination: '/visualizations/TSPAntColony', permanent: true },
+    ];
+  },
   webpack: (config, { dev, isServer }) => {
     if (!dev) {
       config.optimization.minimizer.forEach((plugin: any) => {

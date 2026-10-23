@@ -52,14 +52,6 @@ export const simulations: Project[] = [
     link: '/simulations/LangtonsAnt'
   },
   {
-    id: 'TSPAntColony',
-    title: 'TSP 蚁群算法',
-    description: '旅行商问题的蚁群优化：动态可视化信息素演化与最优路径收敛过程，支持参数调节。',
-    image: '/images/tsp-ant-colony.svg',
-    technologies: ['React', 'TypeScript', 'Canvas'],
-    link: '/simulations/TSPAntColony'
-  },
-  {
     id: 'ParticleLife',
     title: '粒子生命 (Particle Life)',
     description: '基于 WebGPU 加速的粒子人工生命模拟。数千个粒子根据简单的交互矩阵涌现出复杂的类生命行为。',
@@ -76,12 +68,31 @@ export const simulations: Project[] = [
     link: '/simulations/PendulumSim'
   },
   {
+    id: 'TuringMachine',
+    title: '图灵机 · 忙碌海狸 (Busy Beaver)',
+    description: '一维无限纸带图灵机模拟：内置 BB(1)~BB(6) 等多台预设机器，可单步执行、全速运行并对照理论 σ/S 值。',
+    image: '/images/turing-machine.svg',
+    technologies: ['React', 'TypeScript', 'Canvas'],
+    link: '/simulations/TuringMachine'
+  },
+  {
+    id: 'TuringMachine2D',
+    title: '二维图灵机 (Turmite)',
+    description: '二维图灵机模拟：规则为写符号 + 上下左右移动 + 状态转移，网格无界。内置镜面编织、方形织机、混沌甩尾等预设，点击画布可改格子。',
+    image: '/images/turing-machine-2d.svg',
+    technologies: ['React', 'TypeScript', 'Canvas'],
+    link: '/simulations/TuringMachine2D'
+  },
+];
+
+export const visualizations: Project[] = [
+  {
     id: 'Mandelbrot',
     title: '分形几何 (Fractal Geometry)',
     description: '分形几何可视化合集：Mandelbrot / Julia / Newton 分形，支持中心、缩放、迭代次数与参数调节。',
     image: '/images/fractal-geometry.svg',
     technologies: ['React', 'TypeScript', 'Canvas'],
-    link: '/simulations/Mandelbrot'
+    link: '/visualizations/Mandelbrot'
   },
   {
     id: 'DigitSumTurtle',
@@ -89,7 +100,15 @@ export const simulations: Project[] = [
     description: '遍历自然数：n 进制数位和为偶数则前进画线，为奇数则旋转 360°/m。n=2 即 Thue–Morse 海龟曲线，默认参数（初始朝向右下、逆时针）呈水平延展的科赫雪花式分形；无限画布、镜头跟随自动展示完整图案。',
     image: '/images/digit-sum-turtle.svg',
     technologies: ['React', 'TypeScript', 'Canvas'],
-    link: '/simulations/DigitSumTurtle',
+    link: '/visualizations/DigitSumTurtle'
+  },
+  {
+    id: 'TSPAntColony',
+    title: 'TSP 蚁群算法',
+    description: '旅行商问题的蚁群优化：动态可视化信息素演化与最优路径收敛过程，支持参数调节。',
+    image: '/images/tsp-ant-colony.svg',
+    technologies: ['React', 'TypeScript', 'Canvas'],
+    link: '/visualizations/TSPAntColony'
   },
 ];
 
@@ -101,5 +120,5 @@ export const tools: Project[] = [
     image: '/images/brainfuck.svg',
     technologies: ['React', 'TypeScript', 'Interpreter'],
     link: '/tools/Brainfuck'
-  },
+  }
 ];

@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300">
+  <rect width="400" height="300" fill="#fafafa"/>
+  <!-- grid -->
+  <g fill="#18181b">
+    <rect x="60" y="60" width="20" height="20"/>
+    <rect x="80" y="40" width="20" height="20"/>
+    <rect x="100" y="60" width="20" height="20"/>
+    <rect x="120" y="80" width="20" height="20"/>
+    <rect x="140" y="100" width="20" height="20"/>
+    <rect x="160" y="120" width="20" height="20"/>
+    <rect x="180" y="140" width="20" height="20"/>
+    <rect x="200" y="160" width="20" height="20"/>
+    <rect x="220" y="140" width="20" height="20"/>
+    <rect x="240" y="120" width="20" height="20"/>
+    <rect x="260" y="100" width="20" height="20"/>
+    <rect x="280" y="80" width="20" height="20"/>
+  </g>
+  <g fill="#0ea5e9" opacity="0.85">
+    <rect x="80" y="80" width="20" height="20"/>
+    <rect x="120" y="120" width="20" height="20"/>
+    <rect x="160" y="160" width="20" height="20"/>
+    <rect x="200" y="120" width="20" height="20"/>
+    <rect x="240" y="80" width="20" height="20"/>
+  </g>
+  <!-- ant -->
+  <polygon points="150,80 165,110 135,110" fill="#0891b2" stroke="#ffffff" stroke-width="3"/>
+  <!-- title -->
+  <text x="200" y="230" text-anchor="middle" font-family="monospace" font-size="20" font-weight="bold" fill="#18181b">TURING_MACHINE_2D</text>
+  <text x="200" y="255" text-anchor="middle" font-family="monospace" font-size="11" fill="#71717a">TURMITE · 2D TURING MACHINE</text>
+</svg>
