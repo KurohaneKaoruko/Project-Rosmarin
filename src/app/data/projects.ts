@@ -83,6 +83,14 @@ export const simulations: Project[] = [
     technologies: ['React', 'TypeScript', 'Canvas'],
     link: '/simulations/TuringMachine2D'
   },
+  {
+    id: 'PowSim',
+    title: 'PoW 模拟器',
+    description: '工作量证明模拟：纯 TS 实现的 SHA-256，实时求解（可调难度）、篡改区块破坏整链校验、雪崩效应试算。',
+    image: '/images/pow-sim.svg',
+    technologies: ['React', 'TypeScript'],
+    link: '/simulations/PowSim'
+  },
 ];
 
 export const visualizations: Project[] = [
